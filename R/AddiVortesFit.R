@@ -7,6 +7,7 @@ new_AddiVortesFit <- function(posteriorTess, posteriorDim,
                               posteriorSigma, posteriorPred,
                               posteriorDirichletWeights = NULL,
                               posteriorVariableSelection = NULL,
+                              posteriorAugmentedCounts = NULL,
                               posteriorAlpha = NULL,
                               predictionMatrix = NULL,
                               posteriorPower = NULL,
@@ -26,6 +27,7 @@ new_AddiVortesFit <- function(posteriorTess, posteriorDim,
       posteriorPred = posteriorPred,
       posteriorDirichletWeights = posteriorDirichletWeights,
       posteriorVariableSelection = posteriorVariableSelection,
+      posteriorAugmentedCounts = posteriorAugmentedCounts,
       posteriorAlpha = posteriorAlpha,
       predictionMatrix = predictionMatrix,
       posteriorPower = posteriorPower,
@@ -303,15 +305,12 @@ predict.AddiVortesFit <- function(object, newdata,
   
   if (showProgress) cat("\nPrediction generation completed.\n\n")
   
-  # Because of the transformation above, if isClassification == TRUE, 
-  # this matrix is now purely probabilities.
   newTestDataPredictionsMatrix <- do.call(cbind, prediction_list)
   
   if (type == "response" || type == "prob") {
     if (!isClassification && type == "prob") {
       stop("Probability predictions are only valid for classification models.")
     }
-    # rowMeans of probabilities gives the posterior mean probability
     predictions <- rowMeans(newTestDataPredictionsMatrix)
     
   } else if (type == "class") {
@@ -324,7 +323,6 @@ predict.AddiVortesFit <- function(object, newdata,
                            probs = quantiles, na.rm = TRUE))
     
   } else if (type == "matrix") {
-    # Returns the full [N x Samples] matrix of probabilities
     predictions <- newTestDataPredictionsMatrix
   }
   
@@ -341,7 +339,8 @@ predict.AddiVortesFit <- function(object, newdata,
 #' @param y_train A numeric vector of the original training true outcomes.
 #' @param which A numeric vector specifying which plots to generate:
 #'   1 = Residuals plot, 2 = Sigma trace, 3 = Tessellation complexity trace,
-#'   4 = Predicted vs Observed, 5 = Variable Importance, 6 = Alpha Trace. Default is c(1, 2, 3).
+#'   4 = Predicted vs Observed, 5 = Variable Importance, 6 = Alpha Trace,
+#'   7 = Augmented Counts Summary. Default is c(1, 2, 3).
 #' @param ask Logical; if TRUE, the user is asked to press Enter before each plot.
 #' @param ... Additional arguments passed to plotting functions.
 #'
@@ -350,11 +349,11 @@ predict.AddiVortesFit <- function(object, newdata,
 #' @export
 #' @method plot AddiVortesFit
 plot.AddiVortesFit <- function(x, x_train = NULL, y_train = NULL, 
-                               which = c(1, 2, 3), ask = FALSE, ...) {
+                               which = c(1:9), ask = FALSE, ...) {
   
   if (!inherits(x, "AddiVortesFit")) stop("`x` must be an object of class 'AddiVortesFit'.")
-  which <- intersect(which, 1:6)
-  if (length(which) == 0) stop("`which` must contain values between 1 and 6.")
+  which <- intersect(which, 1:9)
+  if (length(which) == 0) stop("`which` must contain values between 1 and 9.")
   
   if (any(which %in% c(1, 4)) && (is.null(x_train) || is.null(y_train))) {
     stop("`x_train` and `y_train` must be provided to plot residuals or predicted vs observed (Plots 1 and 4).")
@@ -369,7 +368,8 @@ plot.AddiVortesFit <- function(x, x_train = NULL, y_train = NULL,
   if (n_plots == 1) { par(mfrow = c(1, 1)) } 
   else if (n_plots == 2) { par(mfrow = c(1, 2)) } 
   else if (n_plots <= 4) { par(mfrow = c(2, 2)) }
-  else { par(mfrow = c(2, 3)) }
+  else if (n_plots <= 6) { par(mfrow = c(2, 3)) }
+  else { par(mfrow = c(3, 3)) }
   
   if (any(which %in% c(1, 4))) {
     y_pred_mean <- predict(x, newdata = x_train, type = "response", showProgress = FALSE)
@@ -497,6 +497,65 @@ plot.AddiVortesFit <- function(x, x_train = NULL, y_train = NULL,
     } else {
       plot(1, type="n", axes=FALSE, xlab="", ylab="", main="Alpha Trace Missing")
       text(1, 1, "No Alpha Trace Found")
+    }
+  }
+  
+  if (7 %in% which) {
+    if (ask && n_plots > 1) { cat("Press [Enter] to see augmented counts plot: "); readline() }
+    if (!is.null(x$posteriorAugmentedCounts)) {
+      
+      old_mar <- par("mar")
+      mean_aug_counts <- rowMeans(x$posteriorAugmentedCounts)
+      cov_names <- if(!is.null(names(x$xCentres))) names(x$xCentres) else paste0("X", 1:length(mean_aug_counts))
+      
+      ord <- order(mean_aug_counts, decreasing = FALSE)
+      
+      max_vars_to_plot <- 20
+      if (length(mean_aug_counts) > max_vars_to_plot) {
+        ord <- tail(ord, max_vars_to_plot)
+        main_title <- paste("Top", max_vars_to_plot, "Mean Augmented Counts")
+      } else {
+        main_title <- "Mean Augmented Geometric Failures"
+      }
+      
+      max_name_len <- max(nchar(cov_names[ord]))
+      par(mar = c(5, max(4.1, max_name_len * 0.6), 4, 2) + 0.1)
+      
+      barplot(mean_aug_counts[ord], horiz = TRUE, names.arg = cov_names[ord], las = 1,
+              col = "darkred", border = NA, xlab = "Mean Failure Count",
+              main = main_title, cex.names = 0.8)
+      
+      par(mar = old_mar)
+      
+    } 
+    
+    if (8 %in% which) {
+      if (ask && n_plots > 1) { cat("Press [Enter] to see ACF for Error Variance: "); readline() }
+      
+      if (isClassification) {
+        plot(1, type = "n", axes = FALSE, xlab = "", ylab = "", main = "ACF: Error Variance")
+        text(1, 1, "Sigma is fixed\n(Probit Classification Mode)")
+      } else if (!is.null(x$posteriorSigma)) {
+        acf(x$posteriorSigma, 
+            main = expression(paste("ACF: Error Variance (", sigma^2, ")")),
+            lwd = 2, col = "darkgreen", ylab = "Autocorrelation", xlab = "Lag")
+      } else {
+        plot(1, type = "n", axes = FALSE, xlab = "", ylab = "", main = "ACF: Sigma Missing")
+        text(1, 1, "No Sigma Trace Found")
+      }
+    }
+    
+    if (9 %in% which) {
+      if (ask && n_plots > 1) { cat("Press [Enter] to see ACF for Dirichlet Concentration: "); readline() }
+      
+      if (!is.null(x$posteriorAlpha)) {
+        acf(x$posteriorAlpha, 
+            main = expression(paste("ACF: Dirichlet Concentration (", alpha, ")")),
+            lwd = 2, col = "darkorange", ylab = "Autocorrelation", xlab = "Lag")
+      } else {
+        plot(1, type = "n", axes = FALSE, xlab = "", ylab = "", main = "ACF: Alpha Missing")
+        text(1, 1, "No Alpha Trace Found")
+      }
     }
   }
   

@@ -53,15 +53,15 @@ bool in_vector(int value, const std::vector<int>& vec) {
                               int old_centres, int new_centres, int d_old, int d_new,
                               double sigma2, const std::string& mod, double sigma2mu, double omega, double lambda, int p,
                               double sum_notin_old, double sum_notin_new, int var_sel_mode) {
-    double prob = fmin(1.0 - 1e-10, fmax(1e-10, omega / p)); 
+    double prob = fmin(1.0 - 1e-10, fmax(1e-10, omega / p));
     double sum_log_old = 0.0, sum_log_new = 0.0, sum_R2_old = 0.0, sum_R2_new = 0.0;
     for(size_t i = 0; i < denomOld.size(); ++i) {
-      sum_log_old += log(fmax(denomOld[i], 1e-16)); 
-      sum_R2_old += (rIjOld[i] * rIjOld[i]) / fmax(denomOld[i], 1e-16); 
+      sum_log_old += log(fmax(denomOld[i], 1e-16));
+      sum_R2_old += (rIjOld[i] * rIjOld[i]) / fmax(denomOld[i], 1e-16);
     }
     for(size_t i = 0; i < denomNew.size(); ++i) {
-      sum_log_new += log(fmax(denomNew[i], 1e-16)); 
-      sum_R2_new += (rIjNew[i] * rIjNew[i]) / fmax(denomNew[i], 1e-16); 
+      sum_log_new += log(fmax(denomNew[i], 1e-16));
+      sum_R2_new += (rIjNew[i] * rIjNew[i]) / fmax(denomNew[i], 1e-16);
     }
     double safe_sigma2 = fmax(sigma2, 1e-10);
     double ratio = 0.5 * (sum_log_old - sum_log_new) + (sigma2mu / (2.0 * safe_sigma2)) * (sum_R2_new - sum_R2_old);
@@ -77,11 +77,11 @@ bool in_vector(int value, const std::vector<int>& vec) {
     } else if (mod == "AC") {
       double t_num = R::dpois(new_centres - 1, lambda, 0); double t_den = R::dpois(new_centres - 2, lambda, 0);
       ratio += log(fmax(t_num / fmax(t_den, 1e-16), 1e-16)) + log(1.0 / new_centres) + 0.5 * log(safe_sigma2);
-      if (new_centres == 2) ratio += log(0.5); 
+      if (new_centres == 2) ratio += log(0.5);
     } else if (mod == "RC") {
       double t_num = R::dpois(new_centres - 1, lambda, 0); double t_den = R::dpois(new_centres, lambda, 0);
       ratio += log(fmax(t_num / fmax(t_den, 1e-16), 1e-16)) + log(new_centres + 1.0) - 0.5 * log(safe_sigma2);
-      if (new_centres == 1) ratio += log(2.0); 
+      if (new_centres == 1) ratio += log(2.0);
     } else if (mod == "Swap") {
       ratio += log((var_sel_mode == 0) ? 1.0 : (sum_notin_old / sum_notin_new));
     }
@@ -93,7 +93,7 @@ bool in_vector(int value, const std::vector<int>& vec) {
                               const std::string& mod, const Hypers& hypers, int p,
                               double sum_notin_old, double sum_notin_new, int var_sel_mode) {
     double prob = fmin(1.0 - 1e-10, fmax(0.0, hypers.omega / p));
-    double ratio = -0.5 * (new_c - old_c) * log(hypers.sigma2mu) + 0.5 * (StatsOld.log_det_Q - StatsNew.log_det_Q) + 0.5 * (StatsNew.quad_form - StatsOld.quad_form);    
+    double ratio = -0.5 * (new_c - old_c) * log(hypers.sigma2mu) + 0.5 * (StatsOld.log_det_Q - StatsNew.log_det_Q) + 0.5 * (StatsNew.quad_form - StatsOld.quad_form); 
     
     if (mod == "AD") {
       double t_num = R::dbinom(new_d - 1, p - 1, prob, 0); double t_den = R::dbinom(old_d - 1, p - 1, prob, 0);
@@ -106,11 +106,11 @@ bool in_vector(int value, const std::vector<int>& vec) {
     } else if (mod == "AC") {
       double t_num = R::dpois(new_c - 1, hypers.lambda_poisson, 0); double t_den = R::dpois(new_c - 2, hypers.lambda_poisson, 0);
       ratio += log(fmax(t_num / fmax(t_den, 1e-16), 1e-16)) + log(1.0 / new_c);
-      if (new_c == 2) ratio += log(0.5); 
+      if (new_c == 2) ratio += log(0.5);
     } else if (mod == "RC") {
       double t_num = R::dpois(new_c - 1, hypers.lambda_poisson, 0); double t_den = R::dpois(new_c, hypers.lambda_poisson, 0);
       ratio += log(fmax(t_num / fmax(t_den, 1e-16), 1e-16)) + log(new_c + 1.0);
-      if (new_c == 1) ratio += log(2.0); 
+      if (new_c == 1) ratio += log(2.0);
     } else if (mod == "Swap") {
       ratio += log((var_sel_mode == 0) ? 1.0 : (sum_notin_old / sum_notin_new));
     }
@@ -119,10 +119,10 @@ bool in_vector(int value, const std::vector<int>& vec) {
   
   std::vector<double> sample_mu_hard(int new_centres, const std::vector<double>& rIjNew, const std::vector<int>& nIjNew, double sigma2mu, double sigma2) {
     std::vector<double> new_mu(new_centres, 0.0);
-    double safe_sigma2 = fmax(sigma2, 1e-10); 
+    double safe_sigma2 = fmax(sigma2, 1e-10);
     for(int i = 0; i < new_centres; ++i) {
       if (nIjNew[i] == 0.0) { new_mu[i] = norm_rand() * sqrt(sigma2mu); continue; }
-      double denom = fmax(nIjNew[i] * sigma2mu + safe_sigma2, 1e-10); 
+      double denom = fmax(nIjNew[i] * sigma2mu + safe_sigma2, 1e-10);
       new_mu[i] = norm_rand() * sqrt(fmax((safe_sigma2 * sigma2mu) / denom, 0.0)) + ((sigma2mu * rIjNew[i]) / denom);
     }
     return new_mu;
@@ -131,7 +131,7 @@ bool in_vector(int value, const std::vector<int>& vec) {
   double sample_sigma_squared_cpp(int n, double nu, double lambda, const double* p_y, const double* p_sum) {
     double sse = 0.0;
     for (int i = 0; i < n; ++i) { double diff = p_y[i] - p_sum[i]; sse += diff * diff; }
-    return fmax(1.0 / R::rgamma((nu + n) / 2.0, 1.0 / ((nu * lambda + sse) / 2.0)), 1e-10); 
+    return fmax(1.0 / R::rgamma((nu + n) / 2.0, 1.0 / ((nu * lambda + sse) / 2.0)), 1e-10);
   }
   
   void calculate_distances_hard(const double* p_data, const double* p_tess, const double* p_tessstar, const double* p_dist,
@@ -188,7 +188,7 @@ bool in_vector(int value, const std::vector<int>& vec) {
       int mod_offset = mod_idx * n_obs;
       for (int q = 0; q < n_obs; ++q) {
         int old_best = p_old_idx[q] - 1;
-        if (old_best != mod_idx) { double old_min_dist = p_dist[q + old_best * n_obs]; double new_dist = p_new_dist[q + mod_offset]; p_result[q] = (new_dist < old_min_dist) ? (mod_idx + 1) : (old_best + 1); } 
+        if (old_best != mod_idx) { double old_min_dist = p_dist[q + old_best * n_obs]; double new_dist = p_new_dist[q + mod_offset]; p_result[q] = (new_dist < old_min_dist) ? (mod_idx + 1) : (old_best + 1); }
         else { p_result[q] = 1; }
       }
       std::vector<double> current_min_dist(n_obs, R_PosInf);
@@ -321,11 +321,11 @@ bool in_vector(int value, const std::vector<int>& vec) {
       for (int i = 1; i <= numCovariates; ++i) { if (!in_vector(i, dim_j_star)) { eligible.push_back(i); sum_w += p_s_weights[i - 1]; } }
       int new_dim = eligible.back();
       if (eligible.size() > 1) { double u = unif_rand() * sum_w; double cum = 0.0; for (int e : eligible) { cum += p_s_weights[e - 1]; if (u <= cum) { new_dim = e; break; } } }
-      dim_j_star.push_back(new_dim); modified_idx = d_j_length + 1; 
+      dim_j_star.push_back(new_dim); modified_idx = d_j_length + 1;
       std::vector<double> new_tess(tess_j_rows * (d_j_length + 1));
       for (int r = 0; r < tess_j_rows; ++r) {
         for (int c = 0; c < d_j_length; ++c) new_tess[r + c * tess_j_rows] = tess_j_star[r + c * tess_j_rows];
-        new_tess[r + d_j_length * tess_j_rows] = get_mu(new_dim - 1) + norm_rand() * get_sd(new_dim - 1); 
+        new_tess[r + d_j_length * tess_j_rows] = get_mu(new_dim - 1) + norm_rand() * get_sd(new_dim - 1);
       }
       tess_j_star = new_tess;
     } else if (p < 0.4 && d_j_length > 1) {
@@ -362,7 +362,7 @@ bool in_vector(int value, const std::vector<int>& vec) {
     PROTECT(res_tess_j_star = Rf_allocMatrix(REALSXP, new_rows, dim_j_star.size())); memcpy(REAL(res_tess_j_star), tess_j_star.data(), tess_j_star.size() * sizeof(double));
     PROTECT(res_dim_j_star = Rf_allocVector(INTSXP, dim_j_star.size())); memcpy(INTEGER(res_dim_j_star), dim_j_star.data(), dim_j_star.size() * sizeof(int));
     PROTECT(res_mod = Rf_allocVector(STRSXP, 1)); SET_STRING_ELT(res_mod, 0, Rf_mkChar(modification.c_str()));
-    PROTECT(res_row_column_modified = Rf_allocVector(INTSXP, 1)); INTEGER(res_row_column_modified)[0] = modified_idx; 
+    PROTECT(res_row_column_modified = Rf_allocVector(INTSXP, 1)); INTEGER(res_row_column_modified)[0] = modified_idx;
     PROTECT(result_list = Rf_allocVector(VECSXP, 4)); SET_VECTOR_ELT(result_list, 0, res_tess_j_star); SET_VECTOR_ELT(result_list, 1, res_dim_j_star); SET_VECTOR_ELT(result_list, 2, res_mod); SET_VECTOR_ELT(result_list, 3, res_row_column_modified);
     PROTECT(list_names = Rf_allocVector(STRSXP, 4)); SET_STRING_ELT(list_names, 0, Rf_mkChar("tess_j_star")); SET_STRING_ELT(list_names, 1, Rf_mkChar("dim_j_star")); SET_STRING_ELT(list_names, 2, Rf_mkChar("Modification")); SET_STRING_ELT(list_names, 3, Rf_mkChar("row_column_modified"));
     Rf_setAttrib(result_list, R_NamesSymbol, list_names); UNPROTECT(6); return result_list;
@@ -371,20 +371,21 @@ bool in_vector(int value, const std::vector<int>& vec) {
 
 extern "C" {
   
-  SEXP super_mcmc_loop_cpp(SEXP x_sexp, SEXP y_sexp, SEXP sum_sexp, SEXP tess_list, SEXP dim_list, 
-                           SEXP indices_list, SEXP sqdist_list, SEXP pred_list, SEXP m_sexp, SEXP p_sexp, 
+  SEXP super_mcmc_loop_cpp(SEXP x_sexp, SEXP y_sexp, SEXP sum_sexp, SEXP tess_list, SEXP dim_list,
+                           SEXP indices_list, SEXP sqdist_list, SEXP pred_list, SEXP m_sexp, SEXP p_sexp,
                            SEXP sd_sexp, SEXP mu_sexp, SEXP sigma2mu_sexp, SEXP omega_sexp, SEXP poisson_lambda_sexp,
                            SEXP total_iter_sexp, SEXP burn_in_sexp, SEXP thinning_sexp,
                            SEXP nu_sexp, SEXP invgamma_lambda_sexp, SEXP show_progress_sexp,
-                           SEXP alpha_sexp, SEXP a_alpha_sexp, SEXP b_alpha_sexp, SEXP rho_alpha_sexp, SEXP dirichlet_warmup_sexp,
-                           SEXP adapt_boost_sexp, SEXP adapt_penalty_sexp, SEXP momentum_decay_sexp, SEXP kappa_sexp, 
+                           SEXP alpha_sexp, SEXP a_alpha_sexp, SEXP b_alpha_sexp, SEXP rho_alpha_sexp,
+                           SEXP update_alpha_sexp, SEXP dirichlet_warmup_sexp,
+                           SEXP adapt_boost_sexp, SEXP adapt_penalty_sexp, SEXP momentum_decay_sexp, SEXP kappa_sexp, SEXP tau_sexp,
                            SEXP var_sel_mode_sexp, SEXP split_mode_sexp, SEXP power_sexp, SEXP p_shape_sexp, SEXP p_rate_sexp, SEXP p_sd_sexp,
-                           SEXP is_class_sexp) { // Added parameter for classification
+                           SEXP is_class_sexp) {
     
     Hypers hypers;
     int var_sel_mode = INTEGER(var_sel_mode_sexp)[0];
-    int split_mode = INTEGER(split_mode_sexp)[0]; 
-    int is_classification = INTEGER(is_class_sexp)[0]; // Classification flag
+    int split_mode = INTEGER(split_mode_sexp)[0];
+    int is_classification = INTEGER(is_class_sexp)[0];
     
     hypers.num_covariates = INTEGER(p_sexp)[0];
     hypers.sigma2mu = REAL(sigma2mu_sexp)[0]; hypers.omega = REAL(omega_sexp)[0]; hypers.lambda_poisson = REAL(poisson_lambda_sexp)[0];
@@ -396,9 +397,10 @@ extern "C" {
     int thinning = INTEGER(thinning_sexp)[0]; int show_progress = INTEGER(show_progress_sexp)[0];
     
     double alpha = REAL(alpha_sexp)[0]; double a_alpha = REAL(a_alpha_sexp)[0]; double b_alpha = REAL(b_alpha_sexp)[0]; double rho_alpha = REAL(rho_alpha_sexp)[0];
+    int update_alpha = INTEGER(update_alpha_sexp)[0];
     int dirichlet_warmup = INTEGER(dirichlet_warmup_sexp)[0];
     double adapt_boost = REAL(adapt_boost_sexp)[0]; double adapt_penalty = REAL(adapt_penalty_sexp)[0];
-    double momentum_decay = REAL(momentum_decay_sexp)[0]; double kappa = REAL(kappa_sexp)[0];
+    double momentum_decay = REAL(momentum_decay_sexp)[0]; double kappa = REAL(kappa_sexp)[0]; double tau = REAL(tau_sexp)[0];
     int num_stored = std::max(0, (total_iter - burn_in) / thinning);
     
     SEXP return_tess, return_dim, return_sqdist, return_pred, return_indices;
@@ -406,9 +408,8 @@ extern "C" {
     if (split_mode == 1) { PROTECT(return_indices = Rf_duplicate(indices_list)); } else { PROTECT(return_indices = Rf_allocVector(VECSXP, 1)); }
     
     SEXP return_sum; PROTECT(return_sum = Rf_duplicate(sum_sexp));
-    double* p_sum = REAL(return_sum); const double* p_x = REAL(x_sexp); 
+    double* p_sum = REAL(return_sum); const double* p_x = REAL(x_sexp);
     
-    // Allocate latent continuous response vector for Probit augmentation
     std::vector<double> Y_latent(n_obs);
     std::memcpy(Y_latent.data(), REAL(y_sexp), n_obs * sizeof(double));
     const double* original_y = REAL(y_sexp);
@@ -419,9 +420,10 @@ extern "C" {
     SEXP s_weights_sexp = PROTECT(Rf_allocVector(REALSXP, p)); double* p_s_weights = REAL(s_weights_sexp);
     for(int i = 0; i < p; ++i) p_s_weights[i] = 1.0 / p;
     SEXP out_dirichlet = PROTECT(Rf_allocMatrix(REALSXP, p, num_stored)); SEXP out_var_sel = PROTECT(Rf_allocMatrix(INTSXP, p, num_stored)); SEXP out_alpha = PROTECT(Rf_allocVector(REALSXP, num_stored));
+    SEXP out_aug_counts = PROTECT(Rf_allocMatrix(REALSXP, p, num_stored));
     
     SEXP out_power, out_mu;
-    if (split_mode == 0) { out_power = PROTECT(Rf_allocMatrix(REALSXP, m, num_stored)); out_mu = PROTECT(Rf_allocVector(VECSXP, num_stored)); } 
+    if (split_mode == 0) { out_power = PROTECT(Rf_allocMatrix(REALSXP, m, num_stored)); out_mu = PROTECT(Rf_allocVector(VECSXP, num_stored)); }
     else { out_power = PROTECT(Rf_allocVector(REALSXP, 1)); out_mu = PROTECT(Rf_allocVector(VECSXP, 1)); }
     
     GetRNGstate();
@@ -429,25 +431,25 @@ extern "C" {
     
     std::vector<double> rIjOld, denomOld, rIjNew, denomNew; std::vector<int> nIjOld, nIjNew;
     std::vector<double> workspace_dist; std::vector<int> workspace_idx(n_obs);
-    if (split_mode == 1) workspace_dist.reserve(n_obs * 50); 
+    if (split_mode == 1) workspace_dist.reserve(n_obs * 50);
     
     Eigen::MatrixXd workspace_sqdist; Eigen::MatrixXd workspace_weights; std::vector<Tessellation> ensemble;
     Eigen::Map<Eigen::VectorXd> Y(Y_latent.data(), n_obs); Eigen::VectorXd Y_hat(n_obs); std::vector<Eigen::VectorXd> Forest_Preds;
     
     if (split_mode == 0) {
-      workspace_sqdist.resize(n_obs, 50); workspace_weights.resize(n_obs, 50); ensemble.resize(m); 
+      workspace_sqdist.resize(n_obs, 50); workspace_weights.resize(n_obs, 50); ensemble.resize(m);
       double* p_vec = REAL(power_sexp);
       for(int j = 0; j < m; ++j) {
         SEXP rtess = VECTOR_ELT(tess_list, j); SEXP rdim = VECTOR_ELT(dim_list, j);
         ensemble[j].n_centres = Rf_nrows(rtess); ensemble[j].n_dims = Rf_length(rdim);
-        ensemble[j].tess.assign(REAL(rtess), REAL(rtess) + (ensemble[j].n_centres * ensemble[j].n_dims)); 
-        ensemble[j].dim.assign(INTEGER(rdim), INTEGER(rdim) + ensemble[j].n_dims); 
+        ensemble[j].tess.assign(REAL(rtess), REAL(rtess) + (ensemble[j].n_centres * ensemble[j].n_dims));
+        ensemble[j].dim.assign(INTEGER(rdim), INTEGER(rdim) + ensemble[j].n_dims);
         ensemble[j].p_val = p_vec[j];
         
-        Eigen::MatrixXd empty_sq; 
-        build_sqdist(p_x, n_obs, ensemble[j].tess, ensemble[j].n_centres, ensemble[j].tess, ensemble[j].n_centres, 
+        Eigen::MatrixXd empty_sq;
+        build_sqdist(p_x, n_obs, ensemble[j].tess, ensemble[j].n_centres, ensemble[j].tess, ensemble[j].n_centres,
                      ensemble[j].dim, ensemble[j].n_dims, ensemble[j].dim, ensemble[j].n_dims, empty_sq, "Init", 0, ensemble[j].cached_sqdist);
-        build_weights(ensemble[j].cached_sqdist, ensemble[j].n_dims, ensemble[j].p_val, ensemble[j].cached_weights); 
+        build_weights(ensemble[j].cached_sqdist, ensemble[j].n_dims, ensemble[j].p_val, ensemble[j].cached_weights);
         
         ensemble[j].mu = Eigen::VectorXd::Zero(ensemble[j].n_centres);
         SEXP initial_mu_sexp = VECTOR_ELT(pred_list, j);
@@ -456,19 +458,20 @@ extern "C" {
         }
       }
       
-      std::memcpy(Y_hat.data(), REAL(sum_sexp), n_obs * sizeof(double)); 
+      std::memcpy(Y_hat.data(), REAL(sum_sexp), n_obs * sizeof(double));
       Forest_Preds.resize(m);
       for(int j = 0; j < m; ++j) {
         Forest_Preds[j] = ensemble[j].cached_weights * ensemble[j].mu;
       }
     }
     
-    int store_idx = 0; 
+    int store_idx = 0;
     
     for (int iter = 0; iter < total_iter; ++iter) {
+      std::vector<double> current_m_counts(p, 0.0);
+      
       if (show_progress && (iter + 1) % std::max(1, total_iter / 100) == 0) { Rprintf("\rProcessing MCMC Iteration %d of %d...", iter + 1, total_iter); R_FlushConsole(); R_CheckUserInterrupt(); }
       
-      // Albert-Chib Truncated Normal Data Augmentation for Probit Model
       if (is_classification == 1) {
         for(int i = 0; i < n_obs; ++i) {
           double current_mean = (split_mode == 1) ? p_sum[i] : Y_hat(i);
@@ -486,7 +489,7 @@ extern "C" {
         }
         hypers.sigma2 = 1.0;
       } else {
-        if (split_mode == 1) { hypers.sigma2 = sample_sigma_squared_cpp(n_obs, hypers.nu, hypers.lambda_invgamma, Y_latent.data(), p_sum); } 
+        if (split_mode == 1) { hypers.sigma2 = sample_sigma_squared_cpp(n_obs, hypers.nu, hypers.lambda_invgamma, Y_latent.data(), p_sum); }
         else { hypers.UpdateSigma(Y - Y_hat); }
       }
       
@@ -497,9 +500,16 @@ extern "C" {
         std::string mod = CHAR(STRING_ELT(mod_sexp, 0)); int mod_idx_cpp = INTEGER(rcm_sexp)[0] - 1; int old_dims = Rf_length(VECTOR_ELT(return_dim, j));
         
         double sum_notin_old = 1.0; const int* p_old_dim = INTEGER(VECTOR_ELT(return_dim, j));
-        for (int k = 0; k < old_dims; ++k) sum_notin_old -= p_s_weights[p_old_dim[k] - 1]; sum_notin_old = fmax(sum_notin_old, 1e-10);
+        for (int k = 0; k < old_dims; ++k) {
+          sum_notin_old -= p_s_weights[p_old_dim[k] - 1];
+        }
+        sum_notin_old = fmax(sum_notin_old, 1e-10);
+        
         double sum_notin_new = 1.0; const int* p_new_dim = INTEGER(dim_j_star_sexp);
-        for (int k = 0; k < new_dims; ++k) sum_notin_new -= p_s_weights[p_new_dim[k] - 1]; sum_notin_new = fmax(sum_notin_new, 1e-10);
+        for (int k = 0; k < new_dims; ++k) {
+          sum_notin_new -= p_s_weights[p_new_dim[k] - 1];
+        }
+        sum_notin_new = fmax(sum_notin_new, 1e-10);
         
         double log_prob = 0.0;
         
@@ -527,11 +537,15 @@ extern "C" {
         
         double acceptance_prob = exp(fmin(0.0, log_prob));
         if (var_sel_mode == 2) {
-          double adaptation_scale = (iter > dirichlet_warmup) ? pow(iter - dirichlet_warmup + 1.0, -kappa) : 1.0;
+          double adaptation_scale = 1.0;
+          if (iter > dirichlet_warmup) {
+            double t = iter - dirichlet_warmup + 1.0;
+            adaptation_scale = pow((1.0 + tau) / (t + tau), kappa);
+          }
           double current_boost = adapt_boost * adaptation_scale; double current_penalty = adapt_penalty * adaptation_scale;
           const int* p_old_dim = INTEGER(VECTOR_ELT(return_dim, j)); const int* p_new_dim = INTEGER(dim_j_star_sexp);
-          if (mod == "AD") { adaptive_momentum[p_new_dim[mod_idx_cpp] - 1] += current_boost * acceptance_prob; } 
-          else if (mod == "RD") { adaptive_momentum[p_old_dim[mod_idx_cpp] - 1] -= current_penalty * acceptance_prob; } 
+          if (mod == "AD") { adaptive_momentum[p_new_dim[mod_idx_cpp] - 1] += current_boost * acceptance_prob; }
+          else if (mod == "RD") { adaptive_momentum[p_old_dim[mod_idx_cpp] - 1] -= current_penalty * acceptance_prob; }
           else if (mod == "Swap") { adaptive_momentum[p_new_dim[mod_idx_cpp] - 1] += current_boost * acceptance_prob; adaptive_momentum[p_old_dim[mod_idx_cpp] - 1] -= current_penalty * acceptance_prob; }
         }
         
@@ -581,53 +595,60 @@ extern "C" {
         UNPROTECT(1);
       }
       
-      // Removed dynamic updating of boost and penalty terms during burn-in
-      /*
-       if (var_sel_mode == 2 && iter < burn_in && (iter + 1) % tune_window == 0 && jump_count > 0) {
-       double avg_acc = running_acc / jump_count; double error = target_acceptance - avg_acc;
-       adapt_boost = fmax(0.001, adapt_boost + learning_rate * error); adapt_penalty = fmax(0.001, adapt_penalty - learning_rate * error);
-       running_acc = 0.0; jump_count = 0;
-       }
-       */
-      
       if (var_sel_mode > 0 && iter > dirichlet_warmup) {
-        std::vector<double> m_counts(p, 0.0);
         for (int j = 0; j < m; ++j) {
           SEXP dim_j_sexp = VECTOR_ELT(return_dim, j); int d_len = Rf_length(dim_j_sexp); const int* p_dim_j = INTEGER(dim_j_sexp);
-          for(int k = 0; k < d_len; ++k) m_counts[p_dim_j[k] - 1] += 1.0;
+          for(int k = 0; k < d_len; ++k) current_m_counts[p_dim_j[k] - 1] += 1.0;
           if (d_len > 1) {
             std::vector<int> ordered_dims(p_dim_j, p_dim_j + d_len);
             for (int k = d_len - 1; k > 0; --k) { int r = floor(unif_rand() * (k + 1)); std::swap(ordered_dims[k], ordered_dims[r]); }
             for (int k = 1; k < d_len; ++k) {
               std::vector<int> ineligible; double sum_inel = 0.0;
               for (int e = 0; e < k; ++e) { ineligible.push_back(ordered_dims[e]); sum_inel += p_s_weights[ordered_dims[e] - 1]; }
-              double prob_success = fmax(1e-5, fmin(1.0 - 1e-10, 1.0 - sum_inel)); double raw_failures = R::rgeom(prob_success); int failures = static_cast<int>(fmin(raw_failures, 10000.0));
+              double prob_success = fmax(1e-5, fmin(1.0 - 1e-10, 1.0 - sum_inel)); double raw_failures = R::rgeom(prob_success);
+              
+              int failures = static_cast<int>(fmin(raw_failures, 1000.0));
+              
               if (failures > 0) {
-                if (ineligible.size() == 1) { m_counts[ineligible[0] - 1] += failures; } 
+                if (ineligible.size() == 1) { current_m_counts[ineligible[0] - 1] += failures; }
                 else {
                   int k_classes = ineligible.size(); std::vector<double> probs(k_classes); double sum_w = 0.0;
                   for (int i = 0; i < k_classes; ++i) { probs[i] = p_s_weights[ineligible[i] - 1]; sum_w += probs[i]; } sum_w = fmax(sum_w, 1e-16); double running_sum = 0.0;
-                  for (int i = 0; i < k_classes - 1; ++i) { probs[i] /= sum_w; running_sum += probs[i]; } probs[k_classes - 1] = fmax(0.0, 1.0 - running_sum); 
+                  for (int i = 0; i < k_classes - 1; ++i) { probs[i] /= sum_w; running_sum += probs[i]; } probs[k_classes - 1] = fmax(0.0, 1.0 - running_sum);
                   std::vector<int> alloc_counts(k_classes, 0); Rf_rmultinom(failures, probs.data(), k_classes, alloc_counts.data());
-                  for (int i = 0; i < k_classes; ++i) m_counts[ineligible[i] - 1] += alloc_counts[i];
+                  for (int i = 0; i < k_classes; ++i) current_m_counts[ineligible[i] - 1] += alloc_counts[i];
                 }
               }
             }
           }
         }
+        
         double sum_s = 0.0;
         for (int i = 0; i < p; ++i) {
-          double raw_shape = (alpha / p) + m_counts[i]; if (var_sel_mode == 2) raw_shape += adaptive_momentum[i];
+          double raw_shape = (alpha / p) + current_m_counts[i]; if (var_sel_mode == 2) raw_shape += adaptive_momentum[i];
           p_s_weights[i] = fmax(R::rgamma(fmax(raw_shape, 1e-10), 1.0), 1e-16); sum_s += p_s_weights[i];
         }
         double sum_log_s = 0.0;
         for (int i = 0; i < p; ++i) {
-          p_s_weights[i] /= sum_s; sum_log_s += log(fmax(p_s_weights[i], 1e-16));
-          if (var_sel_mode == 2) adaptive_momentum[i] *= momentum_decay; 
+          p_s_weights[i] /= sum_s;
+          sum_log_s += log(fmax(p_s_weights[i], 1e-16));
+          if (var_sel_mode == 2) adaptive_momentum[i] *= momentum_decay;
         }
-        double alpha_star = exp(norm_rand() * 0.5 + log(alpha));
-        auto eval_log_post_alpha = [&](double a_val) { return R::lgammafn(a_val) - p * R::lgammafn(a_val / p) + (a_val / p) * sum_log_s + (a_alpha - 1.0) * log(a_val) - (a_alpha + b_alpha) * log(a_val + rho_alpha); };
-        if (log(unif_rand()) < (eval_log_post_alpha(alpha_star) - eval_log_post_alpha(alpha) + log(alpha_star) - log(alpha))) { alpha = alpha_star; }
+        
+        if (update_alpha == 1) {
+          double alpha_star = exp(norm_rand() * 0.5 + log(alpha));
+          auto eval_log_post_alpha = [&](double a_val) {
+            return R::lgammafn(a_val) - p * R::lgammafn(a_val / p) +
+              (a_val / p) * sum_log_s +
+              (a_alpha - 1.0) * log(a_val) -
+              (a_alpha + b_alpha) * log(a_val + rho_alpha);
+          };
+          
+          if (log(unif_rand()) < (eval_log_post_alpha(alpha_star) - eval_log_post_alpha(alpha) + log(alpha_star) - log(alpha))) {
+            alpha = alpha_star;
+          }
+        }
+        
       } else {
         for(int i = 0; i < p; ++i) { p_s_weights[i] = 1.0 / p; if (var_sel_mode == 2) adaptive_momentum[i] *= momentum_decay; }
       }
@@ -653,6 +674,9 @@ extern "C" {
         std::vector<int> current_covariate_counts(p, 0);
         for (int j = 0; j < m; ++j) { SEXP dim_j_sexp = VECTOR_ELT(return_dim, j); int d_len = Rf_length(dim_j_sexp); const int* p_dim_j = INTEGER(dim_j_sexp); for(int k = 0; k < d_len; ++k) current_covariate_counts[p_dim_j[k] - 1] += 1; }
         for(int i = 0; i < p; ++i) INTEGER(out_var_sel)[i + store_idx * p] = current_covariate_counts[i];
+        
+        for(int i = 0; i < p; ++i) REAL(out_aug_counts)[i + store_idx * p] = current_m_counts[i];
+        
         store_idx++;
       }
     }
@@ -660,17 +684,36 @@ extern "C" {
     if (show_progress) { Rprintf("\n"); R_FlushConsole(); } PutRNGstate();
     
     SEXP return_list, list_names;
-    PROTECT(return_list = Rf_allocVector(VECSXP, 10));
-    SET_VECTOR_ELT(return_list, 0, out_tess); SET_VECTOR_ELT(return_list, 1, out_dim); SET_VECTOR_ELT(return_list, 2, out_pred); SET_VECTOR_ELT(return_list, 3, out_sigma); SET_VECTOR_ELT(return_list, 4, out_pred_mat); SET_VECTOR_ELT(return_list, 5, out_dirichlet); SET_VECTOR_ELT(return_list, 6, out_var_sel); SET_VECTOR_ELT(return_list, 7, out_alpha);
-    SET_VECTOR_ELT(return_list, 8, out_power); SET_VECTOR_ELT(return_list, 9, out_mu);
+    PROTECT(return_list = Rf_allocVector(VECSXP, 11));
     
-    PROTECT(list_names = Rf_allocVector(STRSXP, 10));
-    SET_STRING_ELT(list_names, 0, Rf_mkChar("posteriorTess")); SET_STRING_ELT(list_names, 1, Rf_mkChar("posteriorDim")); SET_STRING_ELT(list_names, 2, Rf_mkChar("posteriorPred")); SET_STRING_ELT(list_names, 3, Rf_mkChar("posteriorSigma")); SET_STRING_ELT(list_names, 4, Rf_mkChar("predictionMatrix")); SET_STRING_ELT(list_names, 5, Rf_mkChar("posteriorDirichletWeights")); SET_STRING_ELT(list_names, 6, Rf_mkChar("posteriorVariableSelection")); SET_STRING_ELT(list_names, 7, Rf_mkChar("posteriorAlpha"));
-    SET_STRING_ELT(list_names, 8, Rf_mkChar("posteriorPower")); SET_STRING_ELT(list_names, 9, Rf_mkChar("posteriorMu"));
+    SET_VECTOR_ELT(return_list, 0, out_tess);
+    SET_VECTOR_ELT(return_list, 1, out_dim);
+    SET_VECTOR_ELT(return_list, 2, out_pred);
+    SET_VECTOR_ELT(return_list, 3, out_sigma);
+    SET_VECTOR_ELT(return_list, 4, out_pred_mat);
+    SET_VECTOR_ELT(return_list, 5, out_dirichlet);
+    SET_VECTOR_ELT(return_list, 6, out_var_sel);
+    SET_VECTOR_ELT(return_list, 7, out_alpha);
+    SET_VECTOR_ELT(return_list, 8, out_power);
+    SET_VECTOR_ELT(return_list, 9, out_mu);
+    SET_VECTOR_ELT(return_list, 10, out_aug_counts);
+    
+    PROTECT(list_names = Rf_allocVector(STRSXP, 11));
+    SET_STRING_ELT(list_names, 0, Rf_mkChar("posteriorTess"));
+    SET_STRING_ELT(list_names, 1, Rf_mkChar("posteriorDim"));
+    SET_STRING_ELT(list_names, 2, Rf_mkChar("posteriorPred"));
+    SET_STRING_ELT(list_names, 3, Rf_mkChar("posteriorSigma"));
+    SET_STRING_ELT(list_names, 4, Rf_mkChar("predictionMatrix"));
+    SET_STRING_ELT(list_names, 5, Rf_mkChar("posteriorDirichletWeights"));
+    SET_STRING_ELT(list_names, 6, Rf_mkChar("posteriorVariableSelection"));
+    SET_STRING_ELT(list_names, 7, Rf_mkChar("posteriorAlpha"));
+    SET_STRING_ELT(list_names, 8, Rf_mkChar("posteriorPower"));
+    SET_STRING_ELT(list_names, 9, Rf_mkChar("posteriorMu"));
+    SET_STRING_ELT(list_names, 10, Rf_mkChar("posteriorAugmentedCounts"));
     
     Rf_setAttrib(return_list, R_NamesSymbol, list_names);
     
-    UNPROTECT(19); return return_list;
+    UNPROTECT(20); return return_list;
   }
   // ---------------------------------------------------------
   // PREDICTION: SOFT IDW

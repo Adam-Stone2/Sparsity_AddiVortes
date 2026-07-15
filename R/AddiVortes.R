@@ -35,10 +35,10 @@ scaleData_internal <- function(data) {
 
 AddiVortes <- function (y, x, m = 200, totalMCMCIter = 2500, mcmcBurnIn = 1000, 
                         nu = 6, q = 0.85, k = 3, sd = 0.8, Omega = 1, 
-                        LambdaRate = 25, IntialSigma = "Linear", thinning = 1, showProgress = TRUE,
-                        alpha = 1, a_alpha = 0.5, b_alpha = 1, rho_alpha = ncol(x), dirichletWarmup = NULL,
-                        adaptBoost = 1, adaptPenalty = 1, momentumDecay = 0.90, kappa = 0.60,
-                        varSelMode = 2, numChains = 4,
+                        LambdaRate = 25, IntialSigma = "LASSO", thinning = 1, showProgress = TRUE,
+                        alpha = 1, updateAlpha = TRUE, a_alpha = 0.5, b_alpha = 1, rho_alpha = ncol(x), dirichletWarmup = NULL,
+                        adaptBoost = 1, adaptPenalty = 1, momentumDecay = 0.90, kappa = 0.60, tau = 0,
+                        varSelMode = 0, numChains = 4,
                         splitMode = 1, power = 2.0, p_shape = 2.0, p_rate = 2.0, p_sd = 1) 
 {
   if (is.null(dirichletWarmup)) {
@@ -92,20 +92,17 @@ AddiVortes <- function (y, x, m = 200, totalMCMCIter = 2500, mcmcBurnIn = 1000,
     })
     
     if (is_classification) {
-      # Map raw proportion to the latent probit scale, clamping to avoid infinity
       p_hat <- mean(yScaled)
       latent_offset <- qnorm(max(0.01, min(0.99, p_hat))) 
       
       pred <- rep(list(matrix(latent_offset / m)), m)
       sumOfAllTess <- rep(latent_offset, length(yScaled))
       
-      # Scale the prior variance to span [-3, 3] in the latent space
       SigmaSquaredMu <- (3.0 / (k * sqrt(m)))^2 
       
       SigmaSquaredHat <- 1.0
       lambda_invgamma <- 1.0 
     } else {
-      # Standard continuous initialisation and prior
       pred <- rep(list(matrix(mean(yScaled) / m)), m)
       sumOfAllTess <- rep(mean(yScaled), length(yScaled))
       
@@ -145,11 +142,13 @@ AddiVortes <- function (y, x, m = 200, totalMCMCIter = 2500, mcmcBurnIn = 1000,
                                as.integer(if(showProgress) 1L else 0L),
                                as.numeric(alpha), as.numeric(a_alpha),
                                as.numeric(b_alpha), as.numeric(rho_alpha),
+                               as.integer(if(updateAlpha) 1L else 0L),
                                as.integer(dirichletWarmup),
                                as.numeric(adaptBoost),
                                as.numeric(adaptPenalty),
                                as.numeric(momentumDecay),
                                as.numeric(kappa),
+                               as.numeric(tau),
                                as.integer(varSelMode),
                                splitMode_int,        
                                as.numeric(p_vec),    
@@ -173,6 +172,7 @@ AddiVortes <- function (y, x, m = 200, totalMCMCIter = 2500, mcmcBurnIn = 1000,
   dirichletWeightsCombined <- do.call(cbind, lapply(chain_results, function(res) res$posteriorDirichletWeights))
   variableSelectionCombined <- do.call(cbind, lapply(chain_results, function(res) res$posteriorVariableSelection))
   posteriorAlphaCombined <- do.call(c, lapply(chain_results, function(res) res$posteriorAlpha))
+  posteriorAugmentedCountsCombined <- do.call(cbind, lapply(chain_results, function(res) res$posteriorAugmentedCounts))
   
   posteriorSamplesPerChain <- floor((totalMCMCIter - mcmcBurnIn)/thinning)
   totalPosteriorSamples <- posteriorSamplesPerChain * numChains
@@ -202,6 +202,7 @@ AddiVortes <- function (y, x, m = 200, totalMCMCIter = 2500, mcmcBurnIn = 1000,
     posteriorPred = if(splitMode == 1) posteriorPredCombined else posteriorMuCombined, 
     posteriorDirichletWeights = dirichletWeightsCombined,
     posteriorVariableSelection = variableSelectionCombined,
+    posteriorAugmentedCounts = posteriorAugmentedCountsCombined,
     posteriorAlpha = posteriorAlphaCombined,
     predictionMatrix = predictionMatrixCombined,
     posteriorPower = posteriorPowerCombined,

@@ -2,228 +2,295 @@ benchmark_datasets<-list()
 
 ### Regression datasets
 {
-  # 1. Longley Economic Data (datasets) - 16 obs, 6 covariates (Regression)        x SVM 0.4187, flexBART 0.7534,AddiVortes 0.9
-  # Stress Test: Extreme micro-sample with high collinearity.
-  data(longley, package = "datasets")
-  longley <- na.omit(longley)
-  benchmark_datasets$longley <- list(
-    X = model.matrix(Employed ~ . - 1, data = longley),
-    Y = as.numeric(longley$Employed)
+  # Mice # N = 1814, P = 10345
+  {
+  # install.packages("BGLR")
+  data(mice, package = "BGLR")
+  benchmark_datasets$Mice_BMI <- list(
+    X = as.matrix(mice.X), # N = 1814, P = 10345
+    Y = as.numeric(mice.pheno$Obesity.BMI)
   )
-  rm(longley)
+  rm(mice.X, mice.pheno, mice.A)}
+
+  # 1. TCGA Breast Cancer (curatedTCGAData) - 1,098 obs, 20,531 covariates
+  {# Ensure necessary packages are loaded
+  #BiocManager::install(c("curatedTCGAData", "cBioPortalData", "GEOquery"))
+  library(curatedTCGAData)
+  library(cBioPortalData)
+  library(GEOquery)
   
-  # 2. Freeny's Revenue Data (datasets) - 39 obs, 4 covariates (Regression)        x  SVM 0.01452, RF 0.01820, AddiVortes 0.0191
-  # Stress Test: Very small N.
-  data(freeny, package = "datasets")
-  freeny <- na.omit(freeny)
-  benchmark_datasets$freeny <- list(
-    X = model.matrix(y ~ . - 1, data = freeny),
-    Y = as.numeric(freeny$y)
-  )
-  rm(freeny)
+  # Target: Patient age at diagnosis (continuous)
+  # The gold standard baseline for high-dimensional clinical regression.
+  brca <- curatedTCGAData("BRCA", "RNASeq2GeneNorm", dry.run = FALSE)
+  brca_x <- t(assay(brca[[1]]))
+  brca_y <- colData(brca[[1]])$age_at_initial_pathologic_diagnosis
+  valid_brca <- !is.na(brca_y)
   
-  # 3. Cabbages (MASS) - 60 obs, 3 covariates (Regression)                          x  ALL
-  data(cabbages, package = "MASS")
-  cabbages <- na.omit(cabbages)
-  benchmark_datasets$cabbages <- list(
-    X = model.matrix(HeadWt ~ . - 1, data = cabbages),
-    Y = as.numeric(cabbages$HeadWt)
+  benchmark_datasets$TCGA_BRCA <- list(
+    X = as.matrix(brca_x[valid_brca, ]),
+    Y = as.numeric(brca_y[valid_brca])
   )
-  rm(cabbages)
+  rm(brca, brca_x, brca_y, valid_brca)}
   
-  # 4. Anatomical Data from Cats (MASS) - 144 obs, 2 covariates (Regression)       x SVM, flexBART, wBART
-  # Target: Heart weight (Hwt)
-  data(cats, package = "MASS")
-  cats <- na.omit(cats)
-  benchmark_datasets$cats <- list(
-    X = model.matrix(Hwt ~ . - 1, data = cats),
-    Y = as.numeric(cats$Hwt)
+  # 3. Cancer Cell Line Encyclopedia (cBioPortalData) - 1,019 obs, 20,000+ covariates
+  {# Target: Continuous Mutation Count
+  # Predicting macro-genomic instability based entirely on baseline RNA expression.
+  ccle <- cBioDataPack("ccle_broad_2019")
+  ccle_x <- t(assay(ccle[[1]]))
+  ccle_y <- colData(ccle)$MUTATION_COUNT
+  valid_ccle <- !is.na(ccle_y)
+  
+  benchmark_datasets$CCLE <- list(
+    X = as.matrix(ccle_x[valid_ccle, ]),
+    Y = as.numeric(ccle_y[valid_ccle])
   )
-  rm(cats)
+  rm(ccle, ccle_x, ccle_y, valid_ccle)}
+  
+  # 4. SCAN-B Breast Cancer Cohort (GEOquery) - 3,273 obs, ~20,000 covariates
+  {# Target: Patient Age
+  # Massive population-scale transcriptome array from the Sweden Cancerome Analysis Network.
+  gse96058 <- getGEO("GSE96058", GSEMatrix = TRUE)[[1]]
+  gse_x1 <- t(Biobase::exprs(gse96058))
+  gse_y1 <- as.numeric(as.character(Biobase::pData(gse96058)$`age:ch1`))
+  valid_gse1 <- !is.na(gse_y1)
+  
+  benchmark_datasets$SCAN_B <- list(
+    X = as.matrix(gse_x1[valid_gse1, ]),
+    Y = gse_y1[valid_gse1]
+  )
+  rm(gse96058, gse_x1, gse_y1, valid_gse1)}
+  
+  # 5. Inflammatory Bowel Disease Cohort (GEOquery) - 2,099 obs, ~20,000 covariates
+  {# Target: Patient Age
+  # High N, high P representation of non-cancer tissue (intestinal biopsies).
+  gse131512 <- getGEO("GSE131512", GSEMatrix = TRUE)[[1]]
+  gse_x2 <- t(Biobase::exprs(gse131512))
+  gse_y2 <- as.numeric(as.character(Biobase::pData(gse131512)$`age:ch1`))
+  valid_gse2 <- !is.na(gse_y2)
+  
+  benchmark_datasets$IBD_Cohort <- list(
+    X = as.matrix(gse_x2[valid_gse2, ]),
+    Y = gse_y2[valid_gse2]
+  )
+  rm(gse131512, gse_x2, gse_y2, valid_gse2)}
+  
+  # 3. Permeability (AppliedPredictiveModeling) - 165 obs, 1107 covariates (Regression)
+  {# Target: Continuous permeability of molecules
+  # Covariates: 1107 binary molecular fingerprints
+  data(permeability, package = "AppliedPredictiveModeling")
+  valid <- !is.na(permeability)
+  benchmark_datasets$Permeability <- list(
+    X = as.matrix(fingerprints[valid, ]),
+    Y = as.numeric(permeability[valid])
+  )
+  rm(fingerprints, permeability, valid)}
+  
+  # 4. NIR Soil Spectroscopy (prospectr) - 825 obs, 1050 covariates (Regression)
+  {# Target: Soil Carbon concentration (C)
+  # Covariates: 1050 near-infrared reflectance spectral bands
+  data(NIRsoil, package = "prospectr")
+  nir_df <- data.frame(C = NIRsoil$CEC, NIRsoil$spc)
+  nir_df <- na.omit(nir_df)
+  benchmark_datasets$NIRsoil <- list(
+    X = model.matrix(C ~ . - 1, data = nir_df),
+    Y = as.numeric(nir_df$C)
+  )
+  rm(NIRsoil, nir_df)}
+  
+  # 5. Wheat Yield Markers (BGLR) - 599 obs, 1279 covariates (Regression)
+  {# Target: Continuous wheat trait/yield (first column of wheat.Y)
+  # Covariates: 1279 distinct DArT molecular markers
+  data(wheat, package = "BGLR")
+  valid <- !is.na(wheat.Y[, 1])
+  benchmark_datasets$Wheat <- list(
+    X = as.matrix(wheat.X[valid, ]),
+    Y = as.numeric(wheat.Y[valid, 1])
+  )
+  rm(wheat.X, wheat.Y, wheat.A, valid)}
   
   # 5. Chemical Manufacturing Process (AppliedPredictiveModeling) - 176 obs, 57 covariates     x
-  data(ChemicalManufacturingProcess, package = "AppliedPredictiveModeling")
+  {data(ChemicalManufacturingProcess, package = "AppliedPredictiveModeling")
   ChemicalManufacturingProcess<-na.omit(ChemicalManufacturingProcess)
   benchmark_datasets$ChemManuf <- list(
     X = model.matrix(Yield ~ . - 1, data = ChemicalManufacturingProcess),
     Y = as.numeric(ChemicalManufacturingProcess$Yield)
   )
-  rm(ChemicalManufacturingProcess)
+  rm(ChemicalManufacturingProcess)}
   
   # 6. Road Casualties (datasets) - 192 obs, 7 covariates (Regression)
-  data(Seatbelts, package = "datasets")
+  {data(Seatbelts, package = "datasets")
   Seatbelts_df <- na.omit(as.data.frame(Seatbelts))
   benchmark_datasets$Seatbelts <- list(
     X = model.matrix(DriversKilled ~ . - 1, data = Seatbelts_df),
     Y = as.numeric(Seatbelts_df$DriversKilled)
   )
-  rm(Seatbelts, Seatbelts_df)
+  rm(Seatbelts, Seatbelts_df)}
   
   # 7. Blood-Brain Barrier (caret) - 208 obs, 134 covariates
-  # Using caret for more diverse benchmark options
+  {# Using caret for more diverse benchmark options
   data(BloodBrain, package = "caret")
   benchmark_datasets$BloodBrain <- list(
     X = as.matrix(bbbDescr),
     Y = as.numeric(logBBB)
   )
-  rm(bbbDescr, logBBB)
+  rm(bbbDescr, logBBB)}
   
   # 8. Computer CPU Performance (MASS) - 209 obs, 7 covariates (Regression)
-  # Target: Relative CPU performance (perf)
+  {# Target: Relative CPU performance (perf)
   data(cpus, package = "MASS")
   cpus <- na.omit(cpus)
   benchmark_datasets$cpus <- list(
     X = model.matrix(perf ~ . - 1, data = cpus),
     Y = as.numeric(cpus$perf)
   )
-  rm(cpus)
+  rm(cpus)}
   
   # 9. Tecator (caret) - 215 obs, 100 covariates
-  data(tecator, package = "caret")
+  {data(tecator, package = "caret")
   benchmark_datasets$Tecator <- list(
     X = as.matrix(absorp),
     Y = as.numeric(endpoints[, 2])
   )
-  rm(absorp, endpoints)
+  rm(absorp, endpoints)}
   
   # 10. Vehicle Fuel Economy (ggplot2) - 234 obs, 10 covariates (Regression)
-  # Target: Highway miles per gallon (hwy)
+  {# Target: Highway miles per gallon (hwy)
   data(mpg, package = "ggplot2")
   mpg <- na.omit(mpg)
   benchmark_datasets$mpg <- list(
     X = model.matrix(hwy ~ . - 1, data = mpg),
     Y = as.numeric(mpg$hwy)
   )
-  rm(mpg)
+  rm(mpg)}
   
   # 11. Cox2 Activity (caret) - 266 obs, 255 covariates (Regression)
-  # Stress Test: Ultra-High Dimensionality (P ≈ N). Perfect test for Dirichlet Sparsity.
+  {# Stress Test: Ultra-High Dimensionality (P ≈ N). Perfect test for Dirichlet Sparsity.
   data(cox2, package = "caret")
   cox2_data <- na.omit(data.frame(cox2IC50, cox2Descr))
   benchmark_datasets$Cox2 <- list(
     X = model.matrix(cox2IC50 ~ . - 1, data = cox2_data),
     Y = as.numeric(cox2_data$cox2IC50)
   )
-  rm(cox2Descr, cox2IC50, cox2Class, cox2_data)
+  rm(cox2Descr, cox2IC50, cox2Class, cox2_data)}
   
   # 12. Baseball Hitters (ISLR2) - 322 obs, 19 covariates (Regression)
-  # Target: Player Salary
+  {# Target: Player Salary
   data(Hitters, package = "ISLR2")
   Hitters <- na.omit(Hitters)
   benchmark_datasets$Hitters <- list(
     X = model.matrix(Salary ~ . - 1, data = Hitters),
     Y = as.numeric(Hitters$Salary)
   )
-  rm(Hitters)
+  rm(Hitters)}
   
   # 13. Ozone Readings (mlbench) - 366 obs, 12 covariates (Regression)
-  # Target: Daily maximum one-hour-average ozone reading (V4)
+  {# Target: Daily maximum one-hour-average ozone reading (V4)
   data(Ozone, package = "mlbench")
   Ozone <- na.omit(Ozone)
   benchmark_datasets$Ozone <- list(
     X = model.matrix(V4 ~ . - 1, data = Ozone),
     Y = as.numeric(Ozone$V4)
   )
-  rm(Ozone)
+  rm(Ozone)}
   
   # 14. Auto MPG (ISLR2) - 392 obs, 8 covariates (Regression)
-  # Target: Miles Per Gallon (mpg)
+  {# Target: Miles Per Gallon (mpg)
   data(Auto, package = "ISLR2")
   Auto <- na.omit(Auto)
   benchmark_datasets$Auto <- list(
     X = model.matrix(mpg ~ . - 1, data = Auto),
     Y = as.numeric(Auto$mpg)
   )
-  rm(Auto)
+  rm(Auto)}
   
   # 15. Carseats Sales (ISLR2) - 400 obs, 10 covariates (Regression)
-  # Target: Unit Sales at each location
+  {# Target: Unit Sales at each location
   data(Carseats, package = "ISLR2")
   Carseats <- na.omit(Carseats)
   benchmark_datasets$Carseats <- list(
     X = model.matrix(Sales ~ . - 1, data = Carseats),
     Y = as.numeric(Carseats$Sales)
   )
-  rm(Carseats)
+  rm(Carseats)}
   
   # 16. Credit Card Balance (ISLR2) - 400 obs, 11 covariates (Regression)
-  # Target: Average credit card balance
+  {# Target: Average credit card balance
   data(Credit, package = "ISLR2")
   Credit <- na.omit(Credit)
   benchmark_datasets$Credit <- list(
     X = model.matrix(Balance ~ . - 1, data = Credit),
     Y = as.numeric(Credit$Balance)
   )
-  rm(Credit)
+  rm(Credit)}
   
   # 17. Chick Weight (datasets) - 578 obs, 3 covariates (Regression)
-  data(ChickWeight, package = "datasets")
+  {data(ChickWeight, package = "datasets")
   ChickWeight <- na.omit(ChickWeight)
   benchmark_datasets$ChickWeight <- list(
     X = model.matrix(weight ~ . - 1, data = ChickWeight),
     Y = as.numeric(ChickWeight$weight)
   )
-  rm(ChickWeight)
+  rm(ChickWeight)}
   
   # 18. SoyBean (mlbench) - 683 obs, 35 covariates ## ordinal classification ###
-  data(Soybean, package = "mlbench")
+  {data(Soybean, package = "mlbench")
   Soybean<-na.omit(Soybean)
   benchmark_datasets$Soybean <- list(
     X = model.matrix(Class ~ . - 1, data = Soybean),
     Y = as.numeric(Soybean$Class)
   )
-  rm(Soybean)
+  rm(Soybean)}
   
   # 19. College (ISLR2) - 777 obs, 17 covariates (Regression)
-  # Target: Number of applications received
+  {# Target: Number of applications received
   data(College, package = "ISLR2")
   College <- na.omit(College)
   benchmark_datasets$College <- list(
     X = model.matrix(Apps ~ . - 1, data = College),
     Y = as.numeric(College$Apps)
   )
-  rm(College)
+  rm(College)}
   
   # 20. Cars 2004 (caret) - 804 obs, 17 covariates (Regression)
-  data(cars, package = "caret")
+  {data(cars, package = "caret")
   cars <- na.omit(cars)
   benchmark_datasets$Cars2004 <- list(
     X = model.matrix(Price ~ . - 1, data = cars),
     Y = as.numeric(cars$Price)
   )
-  rm(cars)
+  rm(cars)}
   
   # 21. Sacramento Real Estate (caret) - 932 obs, 8 covariates (Regression)
-  data(Sacramento, package = "caret")
+  {data(Sacramento, package = "caret")
   Sacramento <- na.omit(Sacramento)
   benchmark_datasets$Sacramento <- list(
     X = model.matrix(price ~ . - 1, data = Sacramento),
     Y = as.numeric(Sacramento$price)
   )
-  rm(Sacramento)
+  rm(Sacramento)}
   
   # 22. Solubility (AppliedPredictiveModeling) - 951 obs, 228 covariates (Regression)
-  # Excellent for testing massive P dimensionality
+  {# Excellent for testing massive P dimensionality
   data(solubility, package = "AppliedPredictiveModeling")
   solubility_df <- na.omit(data.frame(solubility = solTrainY, solTrainX))
   benchmark_datasets$Solubility <- list(
     X = model.matrix(solubility ~ . - 1, data = solubility_df),
     Y = as.numeric(solubility_df$solubility)
   )
-  rm(solTrainX, solTrainY, solTestX, solTestY, solubility_df)
+  rm(solTrainX, solTrainY, solTestX, solTestY, solubility_df)}
   
   # 23. Fiji Earthquakes (datasets) - 1000 obs, 4 covariates (Regression)
-  # Target: Earthquake Magnitude (mag)
+  {# Target: Earthquake Magnitude (mag)
   data(quakes, package = "datasets")
   quakes <- na.omit(quakes)
   benchmark_datasets$quakes <- list(
     X = model.matrix(mag ~ . - 1, data = quakes),
     Y = as.numeric(quakes$mag)
   )
-  rm(quakes)
+  rm(quakes)}
   
   # 24. Communities and Crime (fairml) (observations 1968, covariates 102)
-  # Note: Ensure install.packages("fairml") is run if not present
+  {# Note: Ensure install.packages("fairml") is run if not present
   data(communities.and.crime, package = "fairml")
   communities.and.crime<-communities.and.crime[,-2]
   communities.and.crime<-na.omit(communities.and.crime)
@@ -231,20 +298,20 @@ benchmark_datasets<-list()
     X = model.matrix(ViolentCrimesPerPop ~ . - 1, data = communities.and.crime),
     Y = as.numeric(communities.and.crime$ViolentCrimesPerPop)
   )
-  rm(communities.and.crime)
+  rm(communities.and.crime)}
   
   # 25. Dutch Schools Data (MASS) - 2287 obs, 5 covariates (Regression)
-  # Stress Test: Large N, Low P scalability test.
+  {# Stress Test: Large N, Low P scalability test.
   data(nlschools, package = "MASS")
   nlschools <- na.omit(nlschools)
   benchmark_datasets$nlschools <- list(
     X = model.matrix(lang ~ . - 1, data = nlschools),
     Y = as.numeric(nlschools$lang)
   )
-  rm(nlschools)
+  rm(nlschools)}
   
   # 26. Ames Housing (AmesHousing) - 2930 obs, 74 covariates (Regression)
-  # Note: make_ames() cleans the raw data automatically for immediate ML use.
+  {# Note: make_ames() cleans the raw data automatically for immediate ML use.
   # Ensure install.packages("AmesHousing") is run if not present.
   ames <- AmesHousing::make_ames()
   ames <- na.omit(ames)
@@ -252,69 +319,69 @@ benchmark_datasets<-list()
     X = model.matrix(Sale_Price ~ . - 1, data = ames),
     Y = as.numeric(ames$Sale_Price)
   )
-  rm(ames)
+  rm(ames)}
   
   # 27. Wage (ISLR2) - 3000 obs, 10 covariates (Regression)
-  data(Wage, package = "ISLR2")
+  {data(Wage, package = "ISLR2")
   Wage <- na.omit(Wage)
   benchmark_datasets$Wage <- list(
     X = model.matrix(wage ~ . - 1, data = Wage),
     Y = as.numeric(Wage$wage)
   )
-  rm(Wage)
+  rm(Wage)}
   
   # 28. DNA (observations 3186, Covariates 181) #### Ordinal Classification ###
-  data(DNA, package = "mlbench")
+  {data(DNA, package = "mlbench")
   benchmark_datasets$DNA <- list(
     X = model.matrix(Class ~ . - 1, data = DNA),
     Y = as.numeric(DNA$Class)
   )
-  rm(DNA)
+  rm(DNA)}
   
   # 29. Abalone (AppliedPredictiveModeling) - 4177 obs, 8 covariates (Regression) ## ordinal classification ###
-  data(abalone, package = "AppliedPredictiveModeling")
+  {data(abalone, package = "AppliedPredictiveModeling")
   abalone <- na.omit(abalone)
   benchmark_datasets$Abalone <- list(
     X = model.matrix(Rings ~ . - 1, data = abalone),
     Y = as.numeric(abalone$Rings)
   )
-  rm(abalone)
+  rm(abalone)}
   
   # 30. Satellite (observations 6235, Covariates 36) #### Ordinal Classification ###
-  data(Satellite, package = "mlbench")
+  {data(Satellite, package = "mlbench")
   benchmark_datasets$Satellite <- list(
     X = model.matrix(classes ~ . - 1, data = Satellite),
     Y = as.numeric(Satellite$classes)
   )
-  rm(Satellite)
+  rm(Satellite)}
   
   # 31. Texas Housing (ggplot2) - 8602 obs, 8 covariates (Regression)
-  # Target: Median sale price
+  {# Target: Median sale price
   data(txhousing, package = "ggplot2")
   txhousing <- na.omit(txhousing)
   benchmark_datasets$TexasHousing <- list(
     X = model.matrix(median ~ . - 1, data = txhousing),
     Y = as.numeric(txhousing$median)
   )
-  rm(txhousing)
+  rm(txhousing)}
   
   # 32. Bike Sharing (ISLR2) - 8645 obs, 14 covariates (Regression)
-  data(Bikeshare, package = "ISLR2")
+  {data(Bikeshare, package = "ISLR2")
   Bikeshare <- na.omit(Bikeshare)
   benchmark_datasets$Bikeshare <- list(
     X = model.matrix(bikers ~ . - 1, data = Bikeshare),
     Y = as.numeric(Bikeshare$bikers)
   )
-  rm(Bikeshare)
+  rm(Bikeshare)}
   
   # 33. Diamonds (ggplot2) - 53940 obs, 9 covariates (Regression)
-  data(diamonds, package = "ggplot2")
+  {data(diamonds, package = "ggplot2")
   diamonds <- na.omit(diamonds)
   benchmark_datasets$Diamonds <- list(
     X = model.matrix(price ~ . - 1, data = diamonds),
     Y = as.numeric(diamonds$price)
   )
-  rm(diamonds)
+  rm(diamonds)}
   
   # Final memory reclamation
   gc()
@@ -622,3 +689,42 @@ benchmark_datasets<-list()
   # Final memory reclamation
   gc()
 }
+
+# 1. Longley Economic Data (datasets) - 16 obs, 6 covariates (Regression)        x SVM 0.4187, flexBART 0.7534,AddiVortes 0.9
+# Stress Test: Extreme micro-sample with high collinearity.
+data(longley, package = "datasets")
+longley <- na.omit(longley)
+benchmark_datasets$longley <- list(
+  X = model.matrix(Employed ~ . - 1, data = longley),
+  Y = as.numeric(longley$Employed)
+)
+rm(longley)
+
+# 2. Freeny's Revenue Data (datasets) - 39 obs, 4 covariates (Regression)        x  SVM 0.01452, RF 0.01820, AddiVortes 0.0191
+# Stress Test: Very small N.
+data(freeny, package = "datasets")
+freeny <- na.omit(freeny)
+benchmark_datasets$freeny <- list(
+  X = model.matrix(y ~ . - 1, data = freeny),
+  Y = as.numeric(freeny$y)
+)
+rm(freeny)
+
+# 3. Cabbages (MASS) - 60 obs, 3 covariates (Regression)                          x  ALL
+data(cabbages, package = "MASS")
+cabbages <- na.omit(cabbages)
+benchmark_datasets$cabbages <- list(
+  X = model.matrix(HeadWt ~ . - 1, data = cabbages),
+  Y = as.numeric(cabbages$HeadWt)
+)
+rm(cabbages)
+
+# 4. Anatomical Data from Cats (MASS) - 144 obs, 2 covariates (Regression)       x SVM, flexBART, wBART
+# Target: Heart weight (Hwt)
+data(cats, package = "MASS")
+cats <- na.omit(cats)
+benchmark_datasets$cats <- list(
+  X = model.matrix(Hwt ~ . - 1, data = cats),
+  Y = as.numeric(cats$Hwt)
+)
+rm(cats)
