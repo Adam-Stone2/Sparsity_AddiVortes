@@ -10,14 +10,222 @@
   }
   
   set.seed(453)
-  training_data <- sim_fried(500, 500, sqrt(10))
-  test_data <- sim_fried(500,500, sqrt(10))
+  training_data <- sim_fried(200, 400, sqrt(10))
+  test_data <- sim_fried(200,400, sqrt(10))
+  X_train <- training_data$X
+  X_test <-test_data$X
+  Y_test_mu<-test_data$mu
+}
+
+#Second Simulated study (works except Soft)
+{
+  sim_spam_continuous <- function(N, P, sigma) {
+    X <- matrix(runif(N * P, min = -2.5, max = 2.5), nrow = N, ncol = P)
+    
+    f1 <- -sin(2 * X[, 1])
+    f2 <- X[, 2]^2 - (25 / 12)
+    f3 <- X[, 3]
+    f4 <- exp(-X[, 4]) - (2 / 5) * sinh(2.5)
+    
+    mu <- f1 + f2 + f3 + f4
+    Y <- mu + sigma * rnorm(N)
+    
+    return(data.frame(X = X, Y = Y,mu=mu))
+  }
+  set.seed(789)
+  training_data <- sim_spam_continuous(1000, 500,sqrt(10))
+  test_data <- sim_spam_continuous(1000,500, sqrt(10))
+  X_train <- training_data[,1:500]
+  X_test <- test_data[,1:500]
+  Y_test_mu<-test_data$mu
+}
+
+#Binary Input (VerSelMode = 1 eventually converges if 500,000 iterations)
+{
+  sim_regime_binary <- function(N, P_cont, P_bin, sigma) {
+    # Generate continuous predictors uniformly between -1 and 1
+    X <- matrix(runif(N * P_cont, -1, 1), nrow = N, ncol = P_cont)
+    
+    # Generate binary predictors as fair coin flips
+    B <- matrix(rbinom(N * P_bin, 1, 0.5), nrow = N, ncol = P_bin)
+    
+    # Initialize the mean response vector
+    mu <- numeric(N)
+    
+    # Regime 1: B1 == 0 & B2 == 0
+    idx1 <- B[, 1] == 0 & B[, 2] == 0
+    mu[idx1] <- 15 * sin(pi * X[idx1, 1] * X[idx1, 2]) + 
+      10 * (X[idx1, 3])^2 - 
+      5 * X[idx1, 4]
+    
+    # Regime 2: B1 == 1 & B2 == 0
+    idx2 <- B[, 1] == 1 & B[, 2] == 0
+    mu[idx2] <- 15 * cos(pi * X[idx2, 1] * X[idx2, 2]) - 
+      10 * (X[idx2, 3])^2 + 
+      5 * X[idx2, 5]
+    
+    # Regime 3: B1 == 0 & B2 == 1
+    idx3 <- B[, 1] == 0 & B[, 2] == 1
+    mu[idx3] <- 10 * X[idx3, 1] + 
+      10 * X[idx3, 2] + 
+      20 * (X[idx3, 3])^2
+    
+    # Regime 4: B1 == 1 & B2 == 1
+    idx4 <- B[, 1] == 1 & B[, 2] == 1
+    mu[idx4] <- -10 * X[idx4, 1] - 
+      10 * X[idx4, 2] - 
+      20 * (X[idx4, 3])^2
+    
+    # Generate final response with Gaussian noise
+    Y <- mu + sigma * rnorm(N)
+    
+    # Return data and true active indices for validation
+    return(list(
+      X = X, 
+      B = B, 
+      Y = Y,
+      active_cont = 1:5,
+      active_bin = 1:2,
+      mu = mu
+    ))
+  }
+  
+  set.seed(74)
+  training_data <- sim_regime_binary(500, 500, 50,sqrt(10))
+  test_data <- sim_regime_binary(500,500,50, sqrt(10))
+  X_train <- cbind(training_data$X,training_data$B)
+  X_test <- cbind(test_data$X,test_data$B)
+  Y_test_mu<-test_data$mu
+}
+
+#simulation study CM1 (works except Soft)
+{
+  sim_CM1 <- function(n, p, sigma) {
+    # Calculate the number of binary and continuous predictors
+    p_bin <- ceiling(p / 2)
+    p_cont <- p - p_bin
+    
+    # Generate predictors
+    X_bin <- matrix(rbinom(n * p_bin, size = 1, prob = 0.5), nrow = n, ncol = p_bin)
+    X_cont <- matrix(runif(n * p_cont, min = 0, max = 1), nrow = n, ncol = p_cont)
+    X <- cbind(X_bin, X_cont)
+    
+    # Calculate the true non-linear and non-additive signal
+    f0 <- 10 * sin(pi * X[, p_bin + 1] * X[, p_bin + 2]) + 
+      20 * (X[, p_bin + 3] - 0.5)^2 + 
+      10 * X[, 1] + 
+      5 * X[, 2]
+    
+    # Generate response with Gaussian noise
+    y <- rnorm(n, mean = f0, sd = sigma)
+    
+    return(list(X = data.frame(X), Y = y,mu=f0))
+  }
+  set.seed(0394)
+  training_data <- sim_CM1 (500, 500,sqrt(10))
+  test_data <- sim_CM1 (500,500, sqrt(10))
+  X_train <- training_data$X
+  X_test <- test_data$X
+  Y_test_mu<-test_data$mu
+}
+
+#simulation study CM2 (perofrms badly atm)
+{
+  sim_CM2 <- function(n, sigma) {
+    # Generate binary predictors with varying probabilities
+    X1_20 <- matrix(rbinom(n * 20, size = 1, prob = 0.2), nrow = n, ncol = 20)
+    X21_40 <- matrix(rbinom(n * 20, size = 1, prob = 0.5), nrow = n, ncol = 20)
+    
+    # Generate continuous predictors with a block correlation of 0.3
+    p_mvn <- 44 
+    Sigma <- matrix(0.3, nrow = p_mvn, ncol = p_mvn)
+    diag(Sigma) <- 1
+    X41_84 <- MASS::mvrnorm(n, mu = rep(0, p_mvn), Sigma = Sigma)
+    
+    # Combine into the final design matrix
+    X <- cbind(X1_20, X21_40, X41_84)
+    
+    # Calculate the true complex functional form
+    f0 <- -4 + 
+      2 * X[, 1] + 
+      sin(X[, 12] * X[, 44]) * X[, 21] + 
+      0.6 * X[, 41] * X[, 42] + 
+      exp(-2 * (X[, 42] + 1)^2) - 
+      X[, 43] + 
+      0.5 * X[, 44]
+    
+    # Generate response with Gaussian noise
+    y <- rnorm(n, mean = f0, sd = sigma)
+    
+    return(list(X = data.frame(X), Y = y,mu=f0))
+  }
+  
+  set.seed(9834)
+  training_data <- sim_CM2 (1500,sqrt(10))
+  test_data <- sim_CM2 (1500, sqrt(10))
+  X_train <- training_data$X
+  X_test <- test_data$X
+  Y_test_mu<-test_data$mu
+}
+
+#classification case (Binary classification is wrong in code)
+{
+  sim_fried_class <- function(N, P, sigma) {
+    X <- matrix(runif(N * P), nrow = N, ncol = P)
+    mu <- 10 * sin(pi * X[,1] * X[,2]) + 20 * (X[,3] - 0.5)^2 + 10 * X[,4] + 5 * X[,5]
+    
+    latent <- mu + sigma * rnorm(N)
+    latent_scaled <- as.numeric(scale(latent))
+    prob <- 1 / (1 + exp(-latent_scaled))
+    
+    Y <- rbinom(N, size = 1, prob = prob)
+    
+    return(data.frame(X = X, Y = Y))#, prob = prob, mu = mu))
+  }
+  
+  set.seed(74)
+  training_data <- sim_fried_class(500, 100, sqrt(1))
+  test_data <- sim_fried_class(500,100, sqrt(1))
+  X_train <- model.matrix(Y ~ . - 1, data = training_data)
+  X_test <- model.matrix(Y ~ . - 1, data = test_data)
+}
+
+#Non-sparse huge dataset
+{
+  simulated_study_data<-function(n=500,p_active=500,p_inactive=500,sigma_true=1.0 ){
+    set.seed(42)
+    
+    p <- p_active + p_inactive
+    
+    # 2. Generate independent uniform covariates [-1, 1]
+    X <- matrix(runif(n * p, min = -1, max = 1), nrow = n, ncol = p)
+    colnames(X) <- paste0("V", 1:p)
+    
+    # 3. Generate the true Additive Response (Y) using only the first 500 variables
+    #    - First 250 variables have a linear effect
+    #    - Next 250 variables have a non-linear (quadratic/sine) effect
+    linear_part <- rowSums(X[, 1:(p/2)])
+    nonlinear_part <- rowSums(X[, round(p/2):round(3*p/4)]^2) + rowSums(sin(pi * X[, round(3*p/4):p]))
+    
+    Y_true <- linear_part + nonlinear_part
+    
+    # 4. Add Gaussian noise to create the final observation vector
+    Y <- Y_true + rnorm(n, mean = 0, sd = sigma_true)
+    
+    return(list(X = X, Y = Y,mu=Y_true))
+  }
+  
+  set.seed(74)
+  training_data <- simulated_study_data(500, 100,50, sqrt(1))
+  test_data <- simulated_study_data(500,100,50, sqrt(1))
   X_train <- training_data$X
   X_test <-test_data$X
   Y_test_mu<-test_data$mu
 }
 
 set.seed(136)
+
+
 
 tau<-5
 boost_val<-0.5
@@ -35,7 +243,9 @@ Model_AddiVortes_dir <- AddiVortes(training_data$Y, X_train,m=200,thinning = 1,v
 
 Model_DART<-wbart(X_train,training_data$Y,X_test,ntree = 200,ndpost = 2500, nskip = 2500,sparse = TRUE)
 
-Model_BART<-wbart(X_train,training_data$Y,X_test,ntree = 200,ndpost = 2500, nskip = 2500,sparse = FALSE)
+#Model_DART<-wbart(X_train,training_data$Y,X_test,ntree = 200,ndpost = 2500, nskip = 2500,sparse = TRUE,augment =TRUE)
+
+#Model_BART<-wbart(X_train,training_data$Y,X_test,ntree = 200,ndpost = 2500, nskip = 2500,sparse = FALSE)
 
 
 col_adaptive <- "darkorange"
@@ -51,7 +261,7 @@ col_bart <- "royalblue"
   par(mgp = c(2.5, 1, 0))
   plot(Model_AddiVortes_local$posteriorSigma, type = "l", col = col_adaptive, lwd = 2,
        main = expression("Posterior"~ sigma^2~" Trace Plot"),
-       xlab = "MCMC Iteration",ylab = expression(sigma^2 ~ "sample"), ylim = c(1,12))
+       xlab = "MCMC Iteration",ylab = expression(sigma^2 ~ "sample"), ylim = c(1,50))
   lines(Model_AddiVortes_original$posteriorSigma, col= col_original)
   lines(Model_AddiVortes_dir$posteriorSigma,  col = col_dart)
   lines(Model_DART$sigma[2500:5000]^2, col = col_dir)
@@ -583,17 +793,37 @@ col_bart <- "royalblue"
 }
 
 ### Graph 8 Alpha trace ###
-
 {
   par(mfrow=c(1,2))
   plot(1:length(Model_AddiVortes_local$posteriorAlpha), Model_AddiVortes_local$posteriorAlpha, type = "l", xlab = "MCMC Iteration",
        ylab = expression(alpha), main = "Adaptive Alpha Trace",
-       col = col_adaptive, lwd = 1.5)
+       col = col_adaptive, lwd = 1.5,ylim=c(0,4))
   abline(h = mean(Model_AddiVortes_local$posteriorAlpha, na.rm=TRUE), col = "red", lty = 2)
   plot(1:length(Model_AddiVortes_dir$posteriorAlpha), Model_AddiVortes_dir$posteriorAlpha, type = "l", xlab = "MCMC Iteration",
        ylab = expression(alpha), main = "Dirichlet Alpha Trace",
-       col = col_dir, lwd = 1.5)
+       col = col_dir, lwd = 1.5,ylim=c(0,4))
   abline(h = mean(Model_AddiVortes_dir$posteriorAlpha, na.rm=TRUE), col = "red", lty = 2)
+  par(mfrow=c(1,1))
+}
+
+### Graph 10 Probability 
+{
+  par(mfrow=c(1,2))
+  sum_active_covariates <- colSums(Model_AddiVortes_local$posteriorDirichletWeights[1:5, ])
+  sum_noise_covariates <- colSums(Model_AddiVortes_local$posteriorDirichletWeights[6:length(X_test[1,]), ])
+  plot(sum_active_covariates, type = "l", col = col_adaptive,
+       main = "Posteriot Weights",ylim = c(0,1) )
+  lines(sum_noise_covariates,col='red')
+  abline(a=mean(sum_active_covariates),b=0)
+  abline(a=mean(sum_noise_covariates),b=0)
+  sum_active_covariates <- colSums(Model_AddiVortes_dir$posteriorDirichletWeights[1:5, ])
+  sum_noise_covariates <- colSums(Model_AddiVortes_dir$posteriorDirichletWeights[6:length(X_test[1,]), ])
+  plot(sum_active_covariates, type = "l", col = col_dir,
+       main = "Posteriot Weights",ylim = c(0,1) )
+  lines(sum_noise_covariates,col='red')
+  abline(a=mean(sum_active_covariates),b=0)
+  abline(a=mean(sum_noise_covariates),b=0)
+  
   par(mfrow=c(1,1))
 }
 
@@ -682,26 +912,6 @@ col_bart <- "royalblue"
   par(mfrow=c(1,1))
 }
 
-### Graph 10 Probability 
-{
-  par(mfrow=c(1,2))
-  sum_active_covariates <- colSums(Model_AddiVortes_local$posteriorDirichletWeights[1:5, ])
-  sum_noise_covariates <- colSums(Model_AddiVortes_local$posteriorDirichletWeights[6:500, ])
-  plot(sum_active_covariates, type = "l", col = col_adaptive,
-       main = "Posteriot Weights",ylim = c(0,1) )
-  lines(sum_noise_covariates,col='red')
-  abline(a=mean(sum_active_covariates),b=0)
-  abline(a=mean(sum_noise_covariates),b=0)
-  sum_active_covariates <- colSums(Model_AddiVortes_dir$posteriorDirichletWeights[1:5, ])
-  sum_noise_covariates <- colSums(Model_AddiVortes_dir$posteriorDirichletWeights[6:500, ])
-  plot(sum_active_covariates, type = "l", col = col_dir,
-       main = "Posteriot Weights",ylim = c(0,1) )
-  lines(sum_noise_covariates,col='red')
-  abline(a=mean(sum_active_covariates),b=0)
-  abline(a=mean(sum_noise_covariates),b=0)
-  
-  par(mfrow=c(1,1))
-}
 
 
 

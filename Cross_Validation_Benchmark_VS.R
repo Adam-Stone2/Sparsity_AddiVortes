@@ -79,14 +79,14 @@ clusterEvalQ(cl, {
   grid_mode1 <- merge(grid_mode0, hyperparam_cases_1, by = NULL)
   
   tau_cases <- data.frame(
-    tau=c(10,100,1000)
+    tau=c(5,20,100)
   )
   
   grid_mode0_tau<- expand.grid(
     m = c(200),
     k = c(1,3),
     Omega = c(3),
-    LambdaRate = c(5,25),
+    LambdaRate = c(25),
     tau= c(10,100,1000)
   )
   
@@ -95,9 +95,9 @@ clusterEvalQ(cl, {
     alpha = c(1, 1, 1),
     a_alpha = c(0.5, 0.5, 0.5),
     b_alpha = c(1,1,1),
-    adaptBoost = c(6, 2.0, 2.0),
-    adaptPenalty = c(2.0, 2.0, 6.0),
-    momentumDecay = c(0.9),
+    adaptBoost = c(0.5, 2, 10),
+    adaptPenalty = c(0.5, 2, 10),
+    momentumDecay = c(0.7),
     stringsAsFactors = FALSE
   )
   grid_mode2 <- merge(grid_mode0_tau, hyperparam_cases_2, by = NULL)
@@ -303,7 +303,7 @@ for (data_name in names(benchmark_datasets)) {
     for (f in 1:5) {
       cv <- get_cv_data(X_train, Y_train, cv_folds[[f]])
       
-      model <- AddiVortes(cv$Y_train, cv$X_train,updateAlpha = FALSE,
+      model <- AddiVortes(cv$Y_train, cv$X_train,
                           m = params$m, 
                           k = params$k,
                           Omega = params$Omega,
@@ -330,7 +330,7 @@ for (data_name in names(benchmark_datasets)) {
     for (f in 1:5) {
       cv <- get_cv_data(X_train, Y_train, cv_folds[[f]])
       
-      model <- AddiVortes(cv$Y_train, cv$X_train, updateAlpha = FALSE,
+      model <- AddiVortes(cv$Y_train, cv$X_train, 
                           m = params$m, 
                           k = params$k,
                           Omega = params$Omega,
@@ -572,7 +572,7 @@ for (data_name in names(benchmark_datasets)) {
     
     # AddiVortes 1
     ### PERFORMANCE FIX: FULL ITERATIONS FOR FINAL ###
-    final_Addi_1 <- AddiVortes(Y_train, X_train, updateAlpha = FALSE,
+    final_Addi_1 <- AddiVortes(Y_train, X_train, 
                                m = best_params_1$m, 
                                k = best_params_1$k,
                                Omega = best_params_1$Omega,
@@ -587,7 +587,7 @@ for (data_name in names(benchmark_datasets)) {
     
     # AddiVortes 2
     ### PERFORMANCE FIX: FULL ITERATIONS FOR FINAL ###
-    final_Addi_2 <- AddiVortes(Y_train, X_train, updateAlpha = FALSE,
+    final_Addi_2 <- AddiVortes(Y_train, X_train,
                                m = best_params_2$m, 
                                k = best_params_2$k,
                                Omega = best_params_2$Omega,

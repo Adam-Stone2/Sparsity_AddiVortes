@@ -20,6 +20,39 @@ X_test <-test_data$X
 Y_test_mu<-test_data$mu
 }
 
+#Non-sparse huge dataset
+{
+  simulated_study_data<-function(n=500,p_active=500,p_inactive=500,sigma_true=1.0 ){
+  set.seed(42)
+  
+  p <- p_active + p_inactive
+  
+  # 2. Generate independent uniform covariates [-1, 1]
+  X <- matrix(runif(n * p, min = -1, max = 1), nrow = n, ncol = p)
+  colnames(X) <- paste0("V", 1:p)
+  
+  # 3. Generate the true Additive Response (Y) using only the first 500 variables
+  #    - First 250 variables have a linear effect
+  #    - Next 250 variables have a non-linear (quadratic/sine) effect
+  linear_part <- rowSums(X[, 1:(p/2)])
+  nonlinear_part <- rowSums(X[, round(p/2):round(3*p/4)]^2) + rowSums(sin(pi * X[, round(3*p/4):p]))
+  
+  Y_true <- linear_part + nonlinear_part
+  
+  # 4. Add Gaussian noise to create the final observation vector
+  Y <- Y_true + rnorm(n, mean = 0, sd = sigma_true)
+  
+  return(list(X = X, Y = Y,mu=Y_true))
+  }
+  
+  set.seed(74)
+  training_data <- simulated_study_data(500, 100,50, sqrt(1))
+  test_data <- simulated_study_data(500,100,50, sqrt(1))
+  X_train <- training_data$X
+  X_test <-test_data$X
+  Y_test_mu<-test_data$mu
+}
+
 #Second Simulated study (works except Soft)
 {
   sim_spam_continuous <- function(N, P, sigma) {
@@ -260,10 +293,10 @@ sim_CM2 <- function(n, sigma) {
 {
 alpha_val   <- 1
 a_alpha_val <- 0.5
-b_alpha_val <- 1.0
+b_alpha_val <- 1
 boost_val   <- 10.0
 penalty_val <- 10.0
-decay_val   <- 0.90
+decay_val   <- 0.75
 }
 # --- CASE 2: DEFAULT (Balanced / Let the Data Decide) ---
 {
@@ -284,13 +317,14 @@ decay_val   <- 0.90
 }
 }
 
-boost_val<-2
-penalty_val<-6
+boost_val<-10
+penalty_val<-10
 alpha_val<-1
+
 cat("Fitting local update algorithm...\n")
 time_local <- system.time({
   set.seed(78)
-  Model_AddiVortes_local<- AddiVortes(training_data$Y, X_train,m=20,thinning = 1,varSelMode = 2,totalMCMCIter = 5000, mcmcBurnIn = 2500,dirichletWarmup = 1000,nu=6,q=0.9,updateAlpha = FALSE,alpha=alpha_val,a_alpha = a_alpha_val,b_alpha=b_alpha_val,adaptBoost = boost_val, adaptPenalty = penalty_val, momentumDecay = decay_val, kappa = 0.6,numChains = 1,IntialSigma = "LASSO",tau=100,splitMode =1)#,rho_alpha = 1)#,power = p_init_val, p_shape = p_shape_val, p_rate = p_rate_val, p_sd = p_sd_val)
+  Model_AddiVortes_local<- AddiVortes(training_data$Y, X_train,m=200,thinning = 2,varSelMode = 1,totalMCMCIter = 5000, mcmcBurnIn = 10,dirichletWarmup = 5,nu=6,q=0.9,updateAlpha = TRUE,alpha=alpha_val,a_alpha = a_alpha_val,b_alpha=b_alpha_val,adaptBoost = boost_val, adaptPenalty = penalty_val, momentumDecay = decay_val, kappa = 0.6,numChains = 1,IntialSigma = "LASSO",tau=100,splitMode =1)#,rho_alpha = 1)#,power = p_init_val, p_shape = p_shape_val, p_rate = p_rate_val, p_sd = p_sd_val)
 })
 
 time_local <- system.time({
@@ -423,7 +457,7 @@ abline(h=0.5)
 
 plot.AddiVortesFit(Model_AddiVortes_local_test,as.matrix(X_test),test_data$mu,which=c(1:3))
 
-cat("Fitting local update algorithm...\n")cat("Fitting local update algorithTRUEm...\n")
+cat("Fitting local update algorithTRUEm...\n")
 time_dart <- system.time({
   set.seed(123)
   Model_DART<-wbart(X_train,training_data$Y,X_test,ntree = 200,ndpost = 2500, nskip = 2500,sparse = TRUE)
