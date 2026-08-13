@@ -227,19 +227,29 @@ set.seed(136)
 
 
 
-tau<-5
-boost_val<-0.5
-penalty_val<-0.5
-decay_val<-0.7
+##tau<-5
+##boost_val<-2
+##penalty_val<-2
+##decay_val<-0.9
+##alpha_val<-1
+##a_alpha_val <- 0.5
+##b_alpha_val <- 1
+##kappa_val <- 0.8
+
+tau<-20
+boost_val<-5
+penalty_val<-5
+decay_val<-0.9
 alpha_val<-1
 a_alpha_val <- 0.5
 b_alpha_val <- 1
+kappa_val <- 0.8
 
-Model_AddiVortes_local <- AddiVortes(training_data$Y, X_train,m=200,thinning = 1,varSelMode = 2,totalMCMCIter = 5000, mcmcBurnIn = 2500,dirichletWarmup = 1000,nu=6,q=0.9,updateAlpha = TRUE,alpha=alpha_val,a_alpha = a_alpha_val,b_alpha=b_alpha_val,adaptBoost = boost_val, adaptPenalty = penalty_val, momentumDecay = decay_val, kappa = 0.6,numChains = 1,IntialSigma = "LASSO",tau=50,splitMode =1)#,rho_alpha = 1)#,power = p_init_val, p_shape = p_shape_val, p_rate = p_rate_val, p_sd = p_sd_val)
+Model_AddiVortes_local <- AddiVortes(training_data$Y, X_train,m=200,Omega=1.5,thinning = 1,varSelMode = 2,totalMCMCIter = 5000, mcmcBurnIn = 2500,dirichletWarmup = 1000,nu=6,q=0.9,updateAlpha = TRUE,alpha=alpha_val,a_alpha = a_alpha_val,b_alpha=b_alpha_val,adaptBoost = boost_val, adaptPenalty = penalty_val, momentumDecay = decay_val, kappa = kappa_val,numChains = 1,IntialSigma = "LASSO",tau=tau,splitMode =1)#,rho_alpha = 1)#,power = p_init_val, p_shape = p_shape_val, p_rate = p_rate_val, p_sd = p_sd_val)
 
-Model_AddiVortes_original <- AddiVortes(training_data$Y, X_train,m=200,thinning = 1,varSelMode = 0,totalMCMCIter = 5000, mcmcBurnIn = 2500,dirichletWarmup = 1000,nu=6,q=0.9,updateAlpha = FALSE,alpha=alpha_val,a_alpha = a_alpha_val,b_alpha=b_alpha_val,adaptBoost = boost_val, adaptPenalty = penalty_val, momentumDecay = decay_val, kappa = 0.6,numChains = 1,IntialSigma = "LASSO",tau=20,splitMode =1)#,rho_alpha = 1)#,power = p_init_val, p_shape = p_shape_val, p_rate = p_rate_val, p_sd = p_sd_val)
+Model_AddiVortes_original <- AddiVortes(training_data$Y, X_train,m=200,Omega=1.5,thinning = 1,varSelMode = 0,totalMCMCIter = 5000, mcmcBurnIn = 2500,dirichletWarmup = 1000,nu=6,q=0.9,updateAlpha = FALSE,alpha=alpha_val,a_alpha = a_alpha_val,b_alpha=b_alpha_val,adaptBoost = boost_val, adaptPenalty = penalty_val, momentumDecay = decay_val, kappa = kappa_val,numChains = 1,IntialSigma = "LASSO",tau=20,splitMode =1)#,rho_alpha = 1)#,power = p_init_val, p_shape = p_shape_val, p_rate = p_rate_val, p_sd = p_sd_val)
 
-Model_AddiVortes_dir <- AddiVortes(training_data$Y, X_train,m=200,thinning = 1,varSelMode = 1,totalMCMCIter = 5000, mcmcBurnIn = 2500,dirichletWarmup = 1000,nu=6,q=0.9,updateAlpha = TRUE,alpha=alpha_val,a_alpha = a_alpha_val,b_alpha=b_alpha_val,adaptBoost = boost_val, adaptPenalty = penalty_val, momentumDecay = decay_val, kappa = 0.6,numChains = 1,IntialSigma = "LASSO",tau=100,splitMode =1)#,rho_alpha = 1)#,power = p_init_val, p_shape = p_shape_val, p_rate = p_rate_val, p_sd = p_sd_val)
+Model_AddiVortes_dir <- AddiVortes(training_data$Y, X_train,m=200,Omega=1.5,thinning = 1,varSelMode = 1,totalMCMCIter = 5000, mcmcBurnIn = 2500,dirichletWarmup = 1000,nu=6,q=0.9,updateAlpha = TRUE,alpha=alpha_val,a_alpha = a_alpha_val,b_alpha=b_alpha_val,adaptBoost = boost_val, adaptPenalty = penalty_val, momentumDecay = decay_val, kappa = kappa_val,numChains = 1,IntialSigma = "LASSO",tau=tau,splitMode =1)#,rho_alpha = 1)#,power = p_init_val, p_shape = p_shape_val, p_rate = p_rate_val, p_sd = p_sd_val)
 
 Model_DART<-wbart(X_train,training_data$Y,X_test,ntree = 200,ndpost = 2500, nskip = 2500,sparse = TRUE)
 
@@ -256,22 +266,95 @@ col_bart <- "royalblue"
 
 
 
-#### Graph 1 Sigma trace ####
-{par(mfrow=c(1,1))
-  par(mgp = c(2.5, 1, 0))
-  plot(Model_AddiVortes_local$posteriorSigma, type = "l", col = col_adaptive, lwd = 2,
-       main = expression("Posterior"~ sigma^2~" Trace Plot"),
-       xlab = "MCMC Iteration",ylab = expression(sigma^2 ~ "sample"), ylim = c(1,50))
-  lines(Model_AddiVortes_original$posteriorSigma, col= col_original)
-  lines(Model_AddiVortes_dir$posteriorSigma,  col = col_dart)
-  lines(Model_DART$sigma[2500:5000]^2, col = col_dir)
-  #lines(Model_BART$sigma[2500:5000]^2, col = col_bart)
-  abline(10,0,)
-  legend("bottomright", legend = c("Adaptive AddiVortes","Dirichlet AddiVortes", "Original AddiVortes", "DART" ,expression("True"~sigma^2~"value (10)")),
-         col = c(col_adaptive, col_dir,col_original, col_dart,col_bart, "black"), 
-         lwd = c(2, 2, 2, 2,2), lty = c(1, 1, 1, 1,1), bty = "n", cex = 0.8)
-  par(mgp = c(3, 1, 0))
+### Graph 3 Augmented counts ###
+{
+  old_par <- par(no.readonly = TRUE)
+  
+  # Configure 1x2 layout with tight spacing and closer axis labels
+  par(mfrow = c(1, 2), mgp = c(2.2, 0.7, 0))
+  
+  # Helper function to render horizontal barplots with 95% Credible Intervals
+  plot_aug_counts <- function(model, bar_col) {
+    aug_counts <- model$posteriorAugmentedCounts
+    mean_counts <- rowMeans(aug_counts)
+    ci_lower    <- apply(aug_counts, 1, quantile, probs = 0.025)
+    ci_upper    <- apply(aug_counts, 1, quantile, probs = 0.975)
+    
+    cov_names <- if (!is.null(names(model$xCentres))) names(model$xCentres) else paste0("X", seq_along(mean_counts))
+    ord <- order(mean_counts, decreasing = FALSE)
+    if (length(ord) > 20) ord <- tail(ord, 20)
+    
+    # Dynamically adjust left margin for variable names; minimise top and right margins
+    name_margin <- max(4.1, max(nchar(cov_names[ord])) * 0.55)
+    par(mar = c(3.5, name_margin, 0.5, 0.5))
+    
+    bp <- barplot(mean_counts[ord], horiz = TRUE, names.arg = cov_names[ord], las = 1,
+                  col = bar_col, border = NA, xlab = "Failure Count", cex.names = 0.8,
+                  xlim = c(0, max(ci_upper[ord]) * 1.05))
+    
+    # 95% Credible Intervals with caps
+    segments(x0 = ci_lower[ord], y0 = bp, x1 = ci_upper[ord], y1 = bp, lwd = 1.5)
+    segments(x0 = ci_lower[ord], y0 = bp - 0.15, x1 = ci_lower[ord], y1 = bp + 0.15, lwd = 1.5)
+    segments(x0 = ci_upper[ord], y0 = bp - 0.15, x1 = ci_upper[ord], y1 = bp + 0.15, lwd = 1.5)
+  }
+  
+  # Render plots
+  plot_aug_counts(Model_AddiVortes_dir, col_dir)
+  plot_aug_counts(Model_AddiVortes_local, col_adaptive)
+  
+  # Reset plotting parameters
+  par(old_par)
 }
+
+pdf("Posterior_sigma_squared_trace_plot.pdf", width = 5.82, height = 5.24)
+#### Graph 1 Sigma trace ####
+{
+  old_par <- par(no.readonly = TRUE)
+  
+  # Configure a 2x2 layout with zero inner margins (mar) and shared outer margins (oma)
+  # This makes the plots perfectly flush and identical in size.
+  par(mfrow = c(2, 2), mar = c(0.4, 0.4, 0.4, 0.4), oma = c(4, 5, 2, 1), mgp = c(2.5, 1, 0))
+  
+  # List of models and their respective data
+  # Note: Extracting data to variables first keeps the plotting loop clean
+  plot_data <- list(
+    list(data = Model_AddiVortes_local$posteriorSigma, col = col_adaptive),
+    list(data = Model_AddiVortes_dir$posteriorSigma,    col = col_dir),
+    list(data = Model_DART$sigma[2500:5000]^2,         col = col_dart),
+    list(data = Model_AddiVortes_original$posteriorSigma, col = col_original)
+  )
+  
+  # Helper to draw each flush panel
+  for (i in 1:4) {
+    # Determine position (rows/cols)
+    row <- if (i <= 2) 1 else 2
+    col <- if (i %% 2 != 0) 1 else 2
+    
+    # Plot without axes or labels
+    plot(plot_data[[i]]$data, type = "l", col = plot_data[[i]]$col, 
+         lwd = 1.5, ylim = c(2, 19), axes = FALSE, xlab = "", ylab = "", main = "")
+    
+    # Add horizontal reference line
+    abline(h = 10, col = "black", lwd = 1.5)
+    
+    # Draw border box
+    box()
+    
+    # Add y-axis ticks only to the first column (plots 1 and 3)
+    if (col == 1) axis(2, las = 1, xpd = NA)
+    
+    # Add x-axis ticks only to the bottom row (plots 3 and 4)
+    if (row == 2) axis(1, xpd = NA)
+  }
+  
+  # Add shared outer labels
+  mtext("MCMC Iteration", side = 1, outer = TRUE, line = 2.5)
+  mtext(expression(sigma^2 ~ "sample"), side = 2, outer = TRUE, line = 2)
+  
+  # Reset plotting parameters
+  par(old_par)
+}
+dev.off()
 
 ### Graph 2 Average #Centres/#Dimensions per tessellation
 {
@@ -297,7 +380,7 @@ col_bart <- "royalblue"
   
   par(mfrow=c(1,2))
   plot(average_dimensions_adaptive, type = "l", col = col_adaptive, lwd = 2,
-       xlab = "MCMC Iteration", ylab = "Average number of dimensions",ylim=c(0.5,2.5))
+       xlab = "MCMC Iteration", ylab = "Average number of dimensions",ylim=c(2,5))
   lines(average_dimensions_dir,col= col_dir)
   lines(average_dimensions_original,col= col_original)
   
@@ -312,145 +395,177 @@ col_bart <- "royalblue"
   par(mfrow=c(1,1))
 }
 
-### Graph 3 Augmented counts ###
+### Graph 3.5 Trace of augment counts ##
 {
-  old_par <- par(no.readonly = TRUE)
-  par(mfrow=c(1,2))
-  
-  # --- Model 1: Dirichlet AddiVortes ---
-  mean_aug_counts_dir <- rowMeans(Model_AddiVortes_dir$posteriorAugmentedCounts)
-  lower_aug_counts_dir <- apply(Model_AddiVortes_dir$posteriorAugmentedCounts, 1, quantile, probs = 0.025)
-  upper_aug_counts_dir <- apply(Model_AddiVortes_dir$posteriorAugmentedCounts, 1, quantile, probs = 0.975)
-  
-  cov_names_dir <- if(!is.null(names(Model_AddiVortes_dir$xCentres))) names(Model_AddiVortes_dir$xCentres) else paste0("X", 1:length(mean_aug_counts_dir))
-  ord_dir <- order(mean_aug_counts_dir, decreasing = FALSE)
-  
-  max_vars_to_plot <- 20
-  if (length(mean_aug_counts_dir) > max_vars_to_plot) {
-    ord_dir <- tail(ord_dir, max_vars_to_plot)
-    main_title_dir <- "Dirichlet AddiVortes"
-  } else {
-    main_title_dir <- "Mean Augmented Geometric Failures"
+  {
+    old_par <- par(no.readonly = TRUE)
+    
+    # Configure a 2x5 grid with small inner gaps and shared outer margins
+    par(mfrow = c(2, 5), mar = c(0.4, 0.4, 0.4, 0.4), oma = c(4, 4, 1, 1), mgp = c(2.5, 1, 0))
+    
+    var_indices <- 1:5
+    
+    # Calculate a shared y-axis limit for a fair comparison across all ten traces
+    max_count <- max(
+      Model_AddiVortes_local$posteriorAugmentedCounts[var_indices, ],
+      Model_AddiVortes_dir$posteriorAugmentedCounts[var_indices, ],
+      na.rm = TRUE
+    )
+    shared_ylim <- c(0, max_count * 1.05)
+    
+    # Helper function to draw each trace panel cleanly
+    plot_trace_panel <- function(data, trace_col, row, col) {
+      # Draw the plot without default axes or labels
+      plot(data, type = 'l', col = trace_col, lwd = 1.5, ylim = shared_ylim,
+           axes = FALSE, main = "", xlab = "", ylab = "")
+      
+      # Draw a clean border box around each plot
+      box()
+      
+      # Add y-axis ticks only to the first column, allowing them to bleed outside
+      if (col == 1) {
+        axis(2, las = 1, xpd = NA)
+      }
+      
+      # Add x-axis ticks only to the bottom row, allowing them to bleed outside
+      if (row == 2) {
+        axis(1, xpd = NA)
+      }
+    }
+    
+    # --- Row 1: Adaptive AddiVortes ---
+    for (j in var_indices) {
+      plot_trace_panel(Model_AddiVortes_local$posteriorAugmentedCounts[j, ], col_adaptive, row = 1, col = j)
+    }
+    
+    # --- Row 2: Dirichlet AddiVortes ---
+    for (j in var_indices) {
+      plot_trace_panel(Model_AddiVortes_dir$posteriorAugmentedCounts[j, ], col_dir, row = 2, col = j)
+    }
+    
+    # Add the shared outer labels
+    mtext("MCMC iteration", side = 1, outer = TRUE, line = 2.5)
+    mtext("Augmented Counts", side = 2, outer = TRUE, line = 2.5)
+    
+    var_indices <- 6:10
+    
+    # Calculate a shared y-axis limit for covariates 6-10
+    max_count <- max(
+      Model_AddiVortes_local$posteriorAugmentedCounts[var_indices, ],
+      Model_AddiVortes_dir$posteriorAugmentedCounts[var_indices, ],
+      na.rm = TRUE
+    )
+    shared_ylim <- c(0, max_count * 1.05)
+    
+    # Helper function to draw each trace panel cleanly
+    plot_trace_panel <- function(data, trace_col, row, col) {
+      # Draw the plot without default axes or labels
+      plot(data, type = 'l', col = trace_col, lwd = 1.5, ylim = shared_ylim,
+           axes = FALSE, main = "", xlab = "", ylab = "")
+      
+      # Draw a clean border box around each plot
+      box()
+      
+      # Add y-axis ticks only to the first column, allowing them to bleed outside
+      if (col == 1) {
+        axis(2, las = 1, xpd = NA)
+      }
+      
+      # Add x-axis ticks only to the bottom row, allowing them to bleed outside
+      if (row == 2) {
+        axis(1, xpd = NA)
+      }
+    }
+    
+    # --- Row 1: Adaptive AddiVortes ---
+    for (idx in seq_along(var_indices)) {
+      j <- var_indices[idx]
+      plot_trace_panel(Model_AddiVortes_local$posteriorAugmentedCounts[j, ], col_adaptive, row = 1, col = idx)
+    }
+    
+    # --- Row 2: Dirichlet AddiVortes ---
+    for (idx in seq_along(var_indices)) {
+      j <- var_indices[idx]
+      plot_trace_panel(Model_AddiVortes_dir$posteriorAugmentedCounts[j, ], col_dir, row = 2, col = idx)
+    }
+    
+    # Add the shared outer labels
+    mtext("MCMC iteration", side = 1, outer = TRUE, line = 2.5)
+    mtext("Augmented Counts", side = 2, outer = TRUE, line = 2.5)
+    
+    # Reset plotting parameters
+    par(old_par)
   }
-  
-  max_name_len_dir <- max(nchar(cov_names_dir[ord_dir]))
-  par(mar = c(5, max(4.1, max_name_len_dir * 0.6), 4, 2) + 0.1)
-  
-  # Extend xlim to ensure error bars fit on the plot
-  xlim_dir <- c(0, max(upper_aug_counts_dir[ord_dir]) * 1.05)
-  
-  bp_dir <- barplot(mean_aug_counts_dir[ord_dir], horiz = TRUE, names.arg = cov_names_dir[ord_dir], las = 1,
-                    col = col_dir, border = NA, xlab = "Failure Count",
-                    main = main_title_dir, cex.names = 0.8, xlim = xlim_dir)
-  
-  # Add 95% Credible Intervals
-  segments(x0 = lower_aug_counts_dir[ord_dir], y0 = bp_dir, 
-           x1 = upper_aug_counts_dir[ord_dir], y1 = bp_dir, 
-           col = "black", lwd = 1.5)
-  
-  # Add vertical caps to the intervals
-  epsilon <- 0.15
-  segments(x0 = lower_aug_counts_dir[ord_dir], y0 = bp_dir - epsilon, 
-           x1 = lower_aug_counts_dir[ord_dir], y1 = bp_dir + epsilon, col = "black", lwd = 1.5)
-  segments(x0 = upper_aug_counts_dir[ord_dir], y0 = bp_dir - epsilon, 
-           x1 = upper_aug_counts_dir[ord_dir], y1 = bp_dir + epsilon, col = "black", lwd = 1.5)
-  
-  # --- Model 2: Adaptive AddiVortes ---
-  mean_aug_counts_local <- rowMeans(Model_AddiVortes_local$posteriorAugmentedCounts)
-  lower_aug_counts_local <- apply(Model_AddiVortes_local$posteriorAugmentedCounts, 1, quantile, probs = 0.025)
-  upper_aug_counts_local <- apply(Model_AddiVortes_local$posteriorAugmentedCounts, 1, quantile, probs = 0.975)
-  
-  cov_names_local <- if(!is.null(names(Model_AddiVortes_local$xCentres))) names(Model_AddiVortes_local$xCentres) else paste0("X", 1:length(mean_aug_counts_local))
-  ord_local <- order(mean_aug_counts_local, decreasing = FALSE)
-  
-  if (length(mean_aug_counts_local) > max_vars_to_plot) {
-    ord_local <- tail(ord_local, max_vars_to_plot)
-    main_title_local <- "Adaptive AddiVortes"
-  } else {
-    main_title_local <- "Mean Augmented Geometric Failures"
-  }
-  
-  max_name_len_local <- max(nchar(cov_names_local[ord_local]))
-  par(mar = c(5, max(4.1, max_name_len_local * 0.6), 4, 2) + 0.1)
-  
-  xlim_local <- c(0, max(upper_aug_counts_local[ord_local]) * 1.05)
-  
-  bp_local <- barplot(mean_aug_counts_local[ord_local], horiz = TRUE, names.arg = cov_names_local[ord_local], las = 1,
-                      col = col_adaptive, border = NA, xlab = "Failure Count",
-                      main = main_title_local, cex.names = 0.8, xlim = xlim_local)
-  
-  # Add 95% Credible Intervals
-  segments(x0 = lower_aug_counts_local[ord_local], y0 = bp_local, 
-           x1 = upper_aug_counts_local[ord_local], y1 = bp_local, 
-           col = "black", lwd = 1.5)
-  
-  # Add vertical caps to the intervals
-  segments(x0 = lower_aug_counts_local[ord_local], y0 = bp_local - epsilon, 
-           x1 = lower_aug_counts_local[ord_local], y1 = bp_local + epsilon, col = "black", lwd = 1.5)
-  segments(x0 = upper_aug_counts_local[ord_local], y0 = bp_local - epsilon, 
-           x1 = upper_aug_counts_local[ord_local], y1 = bp_local + epsilon, col = "black", lwd = 1.5)
-  
-  par(old_par)
 }
 
 ### Graph 4 TRUE vs Predicted
 {
-  # 1. Compute posterior predictive means for each model
-  # Adjust the slot names if your object structures store test predictions differently
-  pred_addivortes_local <- predict(Model_AddiVortes_local,as.matrix(X_test))
-  pred_addivortes_original <- predict(Model_AddiVortes_original,as.matrix(X_test))
-  pred_addivortes_dir   <- predict(Model_AddiVortes_dir,as.matrix(X_test))
-  pred_dart            <- colMeans(Model_DART$yhat.test)
+  # 1. Compute posterior predictive means and 95% intervals for each model
+  pred_addivortes_local    <- predict(Model_AddiVortes_local, as.matrix(X_test), showProgress = FALSE)
+  ci_addivortes_local      <- predict(Model_AddiVortes_local, as.matrix(X_test), type = "quantile", quantiles = c(0.025, 0.975), showProgress = FALSE)
   
-  # 2. Configure a 2x2 plotting grid with shared graphical parameters
-  par(mfrow = c(2, 2), mar = c(4.5, 4.5, 3, 1))
+  pred_addivortes_original <- predict(Model_AddiVortes_original, as.matrix(X_test), showProgress = FALSE)
+  ci_addivortes_original   <- predict(Model_AddiVortes_original, as.matrix(X_test), type = "quantile", quantiles = c(0.025, 0.975), showProgress = FALSE)
   
-  # Determine common axis limits for consistency across all four plots
-  all_values <- c(Y_test_mu, pred_addivortes_local, pred_addivortes_dir, pred_dart)
+  pred_addivortes_dir      <- predict(Model_AddiVortes_dir, as.matrix(X_test), showProgress = FALSE)
+  ci_addivortes_dir        <- predict(Model_AddiVortes_dir, as.matrix(X_test), type = "quantile", quantiles = c(0.025, 0.975), showProgress = FALSE)
+  
+  pred_dart <- colMeans(Model_DART$yhat.test)
+  ci_dart   <- t(apply(Model_DART$yhat.test, 2, quantile, probs = c(0.025, 0.975)))
+  
+  # 2. Configure a 2x2 plotting grid with tight shared parameters
+  par(mfrow = c(2, 2))
+  par(mgp = c(2.5, 1, 0))
+  
+  # Determine common axis limits using both point predictions and interval boundaries
+  all_values <- c(Y_test_mu, ci_addivortes_local, ci_addivortes_original, ci_addivortes_dir, ci_dart)
   plot_limits <- range(all_values, na.rm = TRUE)
   
-  # 3. Plot 1: AddiVortes Local
-  plot(Y_test_mu, pred_addivortes_local ,
-       main = "Adaptive AddiVortes",
-       xlab = "True values",
-       ylab = "Predicted values",
-       xlim = plot_limits, ylim = plot_limits,
-       col = col_adaptive, pch = 16)
-  abline(a = 0, b = 1, col = "darkgrey", lty = 2, lwd = 2)
+  # Helper function updated to remove main_title
+  plot_with_ci <- function(x_vals, y_vals, ci_matrix, pt_col, x_label, y_label) {
+    # Set up an empty plot with correct limits and no title
+    plot(x_vals, y_vals, type = "n", main = "", xlab = x_label, ylab = y_label, 
+         xlim = plot_limits, ylim = plot_limits)
+    
+    # Draw translucent confidence intervals first so they sit behind the points
+    segments(x0 = x_vals, y0 = ci_matrix[, 1], x1 = x_vals, y1 = ci_matrix[, 2], 
+             col = adjustcolor(pt_col, alpha.f = 0.3), lwd = 2.5)
+    
+    # Add the solid point predictions and the 1:1 reference line
+    points(x_vals, y_vals, col = pt_col, pch = 16, cex = 0.8)
+    abline(a = 0, b = 1, col = "darkgrey", lty = 2, lwd = 2)
+  }
   
-  # 4. Plot 2: AddiVortes Dirichlet
-  plot(Y_test_mu, pred_addivortes_dir,
-       main = "AddiVortes Dirichlet",
-       xlab = "True values",
-       ylab = "",
-       xlim = plot_limits, ylim = plot_limits,
-       col = col_dir, pch = 16)
-  abline(a = 0, b = 1, col = "darkgrey", lty = 2, lwd = 2)
+  # 3. Plot 1: Adaptive AddiVortes (Top-Left)
+  # Top margin reduced to 0.5 since titles are removed
+  par(mar = c(1.5, 4, 0.5, 0.5))
+  plot_with_ci(Y_test_mu, pred_addivortes_local, ci_addivortes_local, 
+               col_adaptive, "", "Predicted values")
   
-  # 5. Plot 3: DART
-  plot(Y_test_mu, pred_dart,
-       main = "DART",
-       xlab = "True values",
-       ylab = "Predicted values",
-       xlim = plot_limits, ylim = plot_limits,
-       col = col_dart, pch = 16)
-  abline(a = 0, b = 1, col = "darkgrey", lty = 2, lwd = 2)
+  # 4. Plot 2: AddiVortes Dirichlet (Top-Right)
+  par(mar = c(1.5, 2, 0.5, 1))
+  plot_with_ci(Y_test_mu, pred_addivortes_dir, ci_addivortes_dir, 
+               col_dir, "", "")
   
-  plot(Y_test_mu, pred_addivortes_original,
-       main = "Original AddiVortes",
-       xlab = "True values",
-       ylab = "",
-       xlim = plot_limits, ylim = plot_limits,
-       col = col_original, pch = 16)
-  abline(a = 0, b = 1, col = "darkgrey", lty = 2, lwd = 2)
+  # 5. Plot 3: DART (Bottom-Left)
+  par(mar = c(4, 4, 0.5, 0.5))
+  plot_with_ci(Y_test_mu, pred_dart, ci_dart, 
+               col_dart, "True values", "Predicted values")
+  
+  # 6. Plot 4: Original AddiVortes (Bottom-Right)
+  par(mar = c(4, 2, 0.5, 1))
+  plot_with_ci(Y_test_mu, pred_addivortes_original, ci_addivortes_original, 
+               col_original, "True values", "")
   
   # Reset plotting parameters to default
-  par(mfrow = c(1, 1))
+  par(mfrow = c(1, 1), mar = c(5, 4, 4, 2) + 0.1, mgp = c(3, 1, 0))
   
-  print(sqrt(mean((Y_test_mu-pred_addivortes_local)^2)))
-  print(sqrt(mean((Y_test_mu-pred_addivortes_original)^2)))
-  print(sqrt(mean((Y_test_mu-pred_addivortes_dir)^2)))
-  print(sqrt(mean((Y_test_mu-pred_dart)^2)))
+  # Output the RMSE scores
+  print(sqrt(mean((Y_test_mu - pred_addivortes_local)^2)))
+  print(sqrt(mean((Y_test_mu - pred_addivortes_original)^2)))
+  print(sqrt(mean((Y_test_mu - pred_addivortes_dir)^2)))
+  print(sqrt(mean((Y_test_mu - pred_dart)^2)))
+  print(sqrt(mean((Y_test_mu - mean(Y_test_mu))^2)))
 }
 
 ### Graph 5 Number of Active Dimensions ###
@@ -496,100 +611,64 @@ col_bart <- "royalblue"
 
 ### Graph 6 Posterior Dirichlet Weights ###
 {
-  par(mfrow=c(1,3))
-  {# --- 1. Extract the Dirichlet Weight metrics ---
-    s_means <- Model_AddiVortes_local$posteriorDirichletWeightsMean
-    s_lower <- Model_AddiVortes_local$posteriorDirichletWeightsLower
-    s_upper <- Model_AddiVortes_local$posteriorDirichletWeightsUpper
-    covariate_index <- 1:length(s_means)
-    
-    number_points<- 10
-    ordered_indexes_mean_values<-order(s_means[-c(1:5)],decreasing = TRUE)[1:number_points]+5
-    
-    # 1. Define your data vectors
-    x_vals <- c(1:5, covariate_index[ordered_indexes_mean_values])
-    y_vals <- c(s_means[1:5], s_means[ordered_indexes_mean_values])
-    y_lower <- c(s_lower[1:5], s_lower[ordered_indexes_mean_values])
-    y_upper <- c(s_upper[1:5], s_upper[ordered_indexes_mean_values])
-    
-    # 2. Draw the bar chart and save the x-coordinates of the bars
-    bp <- barplot(y_vals, 
-                  names.arg = x_vals, 
-                  col = col_adaptive,
-                  main = "Adaptive AddiVortes",
-                  xlab = "Covariate Index", 
-                  ylab = expression(s[j]),ylim=c(0,1))
-    
-    # 3. Add the error bars using the arrows() function
-    arrows(x0 = bp, y0 = y_lower, x1 = bp, y1 = y_upper, 
-           angle = 90, code = 3, length = 0.05, col = "black")
-    
-  }
+  old_par <- par(no.readonly = TRUE)
   
-  {# --- 1. Extract the Dirichlet Weight metrics ---
-    s_means <- Model_AddiVortes_dir$posteriorDirichletWeightsMean
-    s_lower <- Model_AddiVortes_dir$posteriorDirichletWeightsLower
-    s_upper <- Model_AddiVortes_dir$posteriorDirichletWeightsUpper
-    covariate_index <- 1:length(s_means)
-    
-    number_points<- 10
-    ordered_indexes_mean_values<-order(s_means[-c(1:5)],decreasing = TRUE)[1:number_points]+5
-    
-    # 1. Define your data vectors
-    x_vals <- c(1:5, covariate_index[ordered_indexes_mean_values])
-    y_vals <- c(s_means[1:5], s_means[ordered_indexes_mean_values])
-    y_lower <- c(s_lower[1:5], s_lower[ordered_indexes_mean_values])
-    y_upper <- c(s_upper[1:5], s_upper[ordered_indexes_mean_values])
-    
-    # 2. Draw the bar chart and save the x-coordinates of the bars
-    bp <- barplot(y_vals, 
-                  names.arg = x_vals, 
-                  col = col_dir,
-                  main = "Dirchlet AddiVortes",
-                  xlab = "Covariate Index", 
-                  ylab = NULL,ylim=c(0,1))
-    
-    # 3. Add the error bars using the arrows() function
-    arrows(x0 = bp, y0 = y_lower, x1 = bp, y1 = y_upper, 
-           angle = 90, code = 3, length = 0.05, col = "black")
-  }
+  # Configure 1x3 layout with tight axis spacing
+  par(mfrow = c(1, 3), mgp = c(2.5, 1, 0))
   
-  {
-    # 1. Extract and calculate the proportions matrix
-    split_counts <- Model_DART$varcount
-    proportions_matrix <- split_counts / rowSums(split_counts)
+  # Helper function to extract, sort, and plot the inclusion proportions
+  plot_inclusion <- function(means, lower, upper, bar_col, y_label) {
     
-    # 2. Extract means and 95% credible intervals
-    inc_means <- colMeans(proportions_matrix)
-    inc_lower <- apply(proportions_matrix, 2, quantile, probs = 0.025)
-    inc_upper <- apply(proportions_matrix, 2, quantile, probs = 0.975)
-    
-    covariate_index_dart <- 1:length(inc_means)
+    # 1. Filter for the first 5 covariates and the top 10 of the rest
     number_points <- 10
+    ordered_rest <- order(means[-c(1:5)], decreasing = TRUE)[1:number_points] + 5
     
-    # 3. Filter for the first 5 and the top 10 of the rest
-    ordered_indexes_dart <- order(inc_means[-c(1:5)], decreasing = TRUE)[1:number_points] + 5
+    x_vals <- c(1:5, ordered_rest)
+    y_vals <- c(means[1:5], means[ordered_rest])
+    y_lower <- c(lower[1:5], lower[ordered_rest])
+    y_upper <- c(upper[1:5], upper[ordered_rest])
     
-    x_vals_dart <- c(1:5, covariate_index_dart[ordered_indexes_dart])
-    y_vals_dart <- c(inc_means[1:5], inc_means[ordered_indexes_dart])
-    y_lower_dart <- c(inc_lower[1:5], inc_lower[ordered_indexes_dart])
-    y_upper_dart <- c(inc_upper[1:5], inc_upper[ordered_indexes_dart])
+    # 2. Draw the bar chart with no title
+    bp <- barplot(y_vals, 
+                  names.arg = x_vals, 
+                  col = bar_col,
+                  main = "",
+                  xlab = "Covariate Index", 
+                  ylab = y_label,
+                  ylim = c(0, 0.6))
     
-    # 4. Draw the bar chart
-    y_max <- max(y_upper_dart, na.rm = TRUE) * 1.1 
-    
-    bp_dart <- barplot(y_vals_dart, 
-                       names.arg = x_vals_dart, 
-                       col = col_dart,
-                       main = "DART",
-                       xlab = "Covariate Index", 
-                       ylim = c(0, 1))
-    
-    # 5. Add the error bars
-    arrows(x0 = bp_dart, y0 = y_lower_dart, x1 = bp_dart, y1 = y_upper_dart, 
+    # 3. Add the error bars
+    arrows(x0 = bp, y0 = y_lower, x1 = bp, y1 = y_upper, 
            angle = 90, code = 3, length = 0.05, col = "black")
   }
-  par(mfrow=c(1,1))
+  
+  # --- Plot 1: Adaptive AddiVortes (Left) ---
+  par(mar = c(4, 4, 0.5, 0.5)) # Standard left margin for the y-axis label, minimised top
+  plot_inclusion(Model_AddiVortes_local$posteriorDirichletWeightsMean,
+                 Model_AddiVortes_local$posteriorDirichletWeightsLower,
+                 Model_AddiVortes_local$posteriorDirichletWeightsUpper,
+                 col_adaptive, expression(s[j]))
+  
+  # --- Plot 2: Dirichlet AddiVortes (Middle) ---
+  par(mar = c(4, 2.5, 0.5, 0.5)) # Left margin reduced to 2.5 (just enough for numbers)
+  plot_inclusion(Model_AddiVortes_dir$posteriorDirichletWeightsMean,
+                 Model_AddiVortes_dir$posteriorDirichletWeightsLower,
+                 Model_AddiVortes_dir$posteriorDirichletWeightsUpper,
+                 col_dir, "")
+  
+  # --- Plot 3: DART (Right) ---
+  # Calculate DART proportions matrix first
+  split_counts <- Model_DART$varcount
+  proportions_matrix <- split_counts / rowSums(split_counts)
+  
+  par(mar = c(4, 2.5, 0.5, 1)) # Left margin reduced to 2.5, standard right margin
+  plot_inclusion(colMeans(proportions_matrix),
+                 apply(proportions_matrix, 2, quantile, probs = 0.025),
+                 apply(proportions_matrix, 2, quantile, probs = 0.975),
+                 col_dart, "")
+  
+  # Reset plotting parameters
+  par(old_par)
 }
 
 ### Graph 6.5 Trace of s values ###
@@ -638,121 +717,73 @@ col_bart <- "royalblue"
 
 ### Graph 7 Ensemble inclusion probabilities ###
 {
-  par(mfrow=c(2,2))
-  {
-    inclusion_probs <- Model_AddiVortes_local$ensembleInclusionProbabilities
+  old_par <- par(no.readonly = TRUE)
+  
+  # Configure a tight 2x2 layout
+  par(mfrow = c(2, 2), mgp = c(2.5, 1, 0))
+  
+  # Helper function to extract, sort, and plot the ensemble inclusion probabilities
+  plot_ensemble_inclusion <- function(probs, bar_col, x_label, y_label) {
     bars_displayed <- 10
     
-    # 1. Identify the original indices of the top noise variables
-    noise_indices <- 6:length(inclusion_probs)
-    noise_probs <- inclusion_probs[noise_indices]
+    # Identify the original indices of the top noise variables (covariates 6 onwards)
+    noise_indices <- 6:length(probs)
+    noise_probs <- probs[noise_indices]
     
-    # Use order() to get the indices of the highest noise variables, then map back to original index
+    # Get the indices of the highest noise variables and map back to original indices
     top_noise_order <- order(noise_probs, decreasing = TRUE)[1:bars_displayed]
     top_noise_actual_indices <- noise_indices[top_noise_order]
     
-    # 2. Combine the values and names for the plot
-    plot_values <- c(inclusion_probs[1:5], inclusion_probs[top_noise_actual_indices])
+    # Combine the values and names for the plot
+    plot_values <- c(probs[1:5], probs[top_noise_actual_indices])
     plot_names <- c(1:5, top_noise_actual_indices)
     
-    # 3. Generate the corrected barplot
+    # Generate the barplot with no title
     barplot(plot_values, 
             names.arg = plot_names,
-            main = "Adaptive AddiVortes",
-            xlab = "Covariate Index", 
-            ylab = "Proportion of inclusion",
-            col = col_adaptive,
+            main = "",
+            xlab = x_label, 
+            ylab = y_label,
+            col = bar_col,
             border = NA,
             ylim = c(0, 1))
   }
   
-  {
-    inclusion_probs <- Model_AddiVortes_dir$ensembleInclusionProbabilities
-    bars_displayed <- 10
-    
-    # 1. Identify the original indices of the top noise variables
-    noise_indices <- 6:length(inclusion_probs)
-    noise_probs <- inclusion_probs[noise_indices]
-    
-    # Use order() to get the indices of the highest noise variables, then map back to original index
-    top_noise_order <- order(noise_probs, decreasing = TRUE)[1:bars_displayed]
-    top_noise_actual_indices <- noise_indices[top_noise_order]
-    
-    # 2. Combine the values and names for the plot
-    plot_values <- c(inclusion_probs[1:5], inclusion_probs[top_noise_actual_indices])
-    plot_names <- c(1:5, top_noise_actual_indices)
-    
-    # 3. Generate the corrected barplot
-    barplot(plot_values, 
-            names.arg = plot_names,
-            main = "Dirichlet AddiVortes",
-            xlab = "Covariate Index", 
-            col = col_dir,
-            border = NA,
-            ylim = c(0, 1))
-  }
+  # --- Plot 1: Adaptive AddiVortes (Top-Left) ---
+  # Bottom margin increased to 2.2 to safely clear the x-axis numbers
+  par(mar = c(2.2, 4, 1.2, 0.5))
+  plot_ensemble_inclusion(Model_AddiVortes_local$ensembleInclusionProbabilities, 
+                          col_adaptive, "", "Proportion of inclusion")
   
-  {
-    # 1. Extract the variable count matrix
-    split_counts_wbart <- Model_DART$varcount
-    
-    # 2. Calculate probability of inclusion in the ensemble (count > 0)
-    prob_in_ensemble <- colMeans(split_counts_wbart > 0)
-    
-    # 3. Define the number of top additional bars to display
-    bars_displayed <- 10
-    
-    # 4. Identify the indices of the top remaining covariates
-    ordered_indexes_ensemble <- order(prob_in_ensemble[-c(1:5)], decreasing = TRUE)[1:bars_displayed] + 5
-    
-    # 5. Construct the vectors for plotting
-    y_vals_ensemble <- c(prob_in_ensemble[1:5], prob_in_ensemble[ordered_indexes_ensemble])
-    x_names_ensemble <- c(1:5, ordered_indexes_ensemble)
-    
-    # 6. Generate the bar plot
-    barplot(y_vals_ensemble,
-            main = "DART",
-            xlab = "Covariate Index", 
-            ylab = "Proportion of inclusion",
-            col = col_dart,
-            border = NA,
-            ylim = c(0, 1),
-            names.arg = x_names_ensemble)
-  }
+  # --- Plot 2: Dirichlet AddiVortes (Top-Right) ---
+  # Bottom margin increased to 2.2 to match
+  par(mar = c(2.2, 2.5, 1.2, 1))
+  plot_ensemble_inclusion(Model_AddiVortes_dir$ensembleInclusionProbabilities, 
+                          col_dir, "", "")
   
-  {
-    inclusion_probs <- Model_AddiVortes_original$ensembleInclusionProbabilities
-    bars_displayed <- 10
-    
-    # 1. Identify the original indices of the top noise variables
-    noise_indices <- 6:length(inclusion_probs)
-    noise_probs <- inclusion_probs[noise_indices]
-    
-    # Use order() to get the indices of the highest noise variables, then map back to original index
-    top_noise_order <- order(noise_probs, decreasing = TRUE)[1:bars_displayed]
-    top_noise_actual_indices <- noise_indices[top_noise_order]
-    
-    # 2. Combine the values and names for the plot
-    plot_values <- c(inclusion_probs[1:5], inclusion_probs[top_noise_actual_indices])
-    plot_names <- c(1:5, top_noise_actual_indices)
-    
-    # 3. Generate the corrected barplot
-    barplot(plot_values, 
-            names.arg = plot_names,
-            main = "Original AddiVortes",
-            xlab = "Covariate Index", 
-            col = col_original,
-            border = NA,
-            ylim = c(0, 1))
-  }
+  # --- Plot 3: DART (Bottom-Left) ---
+  # Calculate probability of inclusion in the ensemble (count > 0)
+  prob_in_ensemble_dart <- colMeans(Model_DART$varcount > 0)
   
-  par(mfrow=c(1,1))
+  # Standard left/bottom margins, top margin at 0.5
+  par(mar = c(4, 4, 0.5, 0.5))
+  plot_ensemble_inclusion(prob_in_ensemble_dart, 
+                          col_dart, "Covariate Index", "Proportion of inclusion")
+  
+  # --- Plot 4: Original AddiVortes (Bottom-Right) ---
+  # Left margin at 2.5, standard bottom margin, top margin at 0.5
+  par(mar = c(4, 2.5, 0.5, 1))
+  plot_ensemble_inclusion(Model_AddiVortes_original$ensembleInclusionProbabilities, 
+                          col_original, "Covariate Index", "")
+  
+  # Reset plotting parameters
+  par(old_par)
 }
 
 ### Graph 7.5 trace of variable count ###
 {
   par(mfrow=c(2,5))
-  for (j in 1:10) {
+  for (j in c(1:8,378,254)) {
     # Pre-allocating the vector size speeds up the loop significantly
     number_of_inclusions <- numeric(2500) 
     for(i in 1:2500) {
@@ -790,51 +821,148 @@ col_bart <- "royalblue"
          ylim = y_lim, xlab = "MCMC iteration", ylab = y_lab)
   }
   par(mfrow=c(1,1))
+  
+  {
+    old_par <- par(no.readonly = TRUE)
+    
+    # 1. Add a small inner margin (mar) for gaps, keeping oma for shared outer axes
+    par(mfrow = c(3, 5), mar = c(0.4, 0.4, 0.4, 0.4), oma = c(4, 4, 1, 1), mgp = c(2.5, 1, 0))
+    
+    var_indices <- 1:5
+    n_iter <- 2500
+    
+    # 2. Pre-allocate and extract inclusion counts for speed
+    inc_adaptive <- matrix(0, nrow = n_iter, ncol = 5)
+    inc_dir      <- matrix(0, nrow = n_iter, ncol = 5)
+    
+    for (i in 1:n_iter) {
+      for (j in var_indices) {
+        inc_adaptive[i, j] <- sum(unlist(Model_AddiVortes_local$posteriorDim[[i]]) == j)
+        inc_dir[i, j]      <- sum(unlist(Model_AddiVortes_dir$posteriorDim[[i]]) == j)
+      }
+    }
+    
+    # Helper to draw each panel with a small gap
+    plot_panel <- function(data, bar_col, row, col) {
+      # Draw the plot without default axes or labels
+      plot(data, type = 'l', col = bar_col, lwd = 2, ylim = c(0, 200),
+           axes = FALSE, main = "", xlab = "", ylab = "")
+      
+      # Draw a clean border box around each plot
+      box()
+      
+      # Add y-axis ticks only to the first column
+      if (col == 1) {
+        axis(2, las = 1, xpd = NA)
+      }
+      
+      # Add x-axis ticks only to the bottom row
+      if (row == 3) {
+        axis(1, xpd = NA)
+      }
+    }
+    
+    # --- Row 1: Adaptive AddiVortes ---
+    for (j in var_indices) {
+      plot_panel(inc_adaptive[, j], col_adaptive, row = 1, col = j)
+    }
+    
+    # --- Row 2: Dirichlet AddiVortes ---
+    for (j in var_indices) {
+      plot_panel(inc_dir[, j], col_dir, row = 2, col = j)
+    }
+    
+    # --- Row 3: DART Model ---
+    for (j in var_indices) {
+      plot_panel(Model_DART$varcount[, j], col_dart, row = 3, col = j)
+    }
+    
+    # 3. Add the shared outer labels
+    mtext("MCMC iteration", side = 1, outer = TRUE, line = 2.5)
+    mtext("Number of inclusions", side = 2, outer = TRUE, line = 2.5)
+    
+    # Reset plotting parameters
+    par(old_par)
+  }
 }
 
 ### Graph 8 Alpha trace ###
 {
-  par(mfrow=c(1,2))
-  plot(1:length(Model_AddiVortes_local$posteriorAlpha), Model_AddiVortes_local$posteriorAlpha, type = "l", xlab = "MCMC Iteration",
-       ylab = expression(alpha), main = "Adaptive Alpha Trace",
-       col = col_adaptive, lwd = 1.5,ylim=c(0,4))
-  abline(h = mean(Model_AddiVortes_local$posteriorAlpha, na.rm=TRUE), col = "red", lty = 2)
-  plot(1:length(Model_AddiVortes_dir$posteriorAlpha), Model_AddiVortes_dir$posteriorAlpha, type = "l", xlab = "MCMC Iteration",
-       ylab = expression(alpha), main = "Dirichlet Alpha Trace",
-       col = col_dir, lwd = 1.5,ylim=c(0,4))
-  abline(h = mean(Model_AddiVortes_dir$posteriorAlpha, na.rm=TRUE), col = "red", lty = 2)
-  par(mfrow=c(1,1))
+  old_par <- par(no.readonly = TRUE)
+  
+  # Configure a tight 1x2 layout
+  par(mfrow = c(1, 2), mgp = c(2.5, 1, 0))
+  
+  # --- Left Plot: Adaptive Alpha Trace ---
+  # Standard left/bottom margins, minimised top and right margins
+  par(mar = c(4, 4, 0.5, 0.5))
+  plot(1:length(Model_AddiVortes_local$posteriorAlpha), Model_AddiVortes_local$posteriorAlpha, 
+       type = "l", xlab = "MCMC Iteration", ylab = expression(alpha ~ "sample"), main = "",
+       col = col_adaptive, lwd = 1.5, ylim = c(0, 4))
+  abline(h = mean(Model_AddiVortes_local$posteriorAlpha, na.rm = TRUE), col = "red", lty = 2)
+  
+  # --- Right Plot: Dirichlet Alpha Trace ---
+  # Minimized left margin to pull it close, no y-axis label
+  par(mar = c(4, 1.5, 0.5, 1))
+  plot(1:length(Model_AddiVortes_dir$posteriorAlpha), Model_AddiVortes_dir$posteriorAlpha, 
+       type = "l", xlab = "MCMC Iteration", ylab = "", main = "",
+       col = col_dir, lwd = 1.5, ylim = c(0, 4))
+  abline(h = mean(Model_AddiVortes_dir$posteriorAlpha, na.rm = TRUE), col = "red", lty = 2)
+  
+  # Reset plotting parameters
+  par(old_par)
+  
 }
 
 ### Graph 10 Probability 
 {
-  par(mfrow=c(1,2))
-  sum_active_covariates <- colSums(Model_AddiVortes_local$posteriorDirichletWeights[1:5, ])
-  sum_noise_covariates <- colSums(Model_AddiVortes_local$posteriorDirichletWeights[6:length(X_test[1,]), ])
-  plot(sum_active_covariates, type = "l", col = col_adaptive,
-       main = "Posteriot Weights",ylim = c(0,1) )
-  lines(sum_noise_covariates,col='red')
-  abline(a=mean(sum_active_covariates),b=0)
-  abline(a=mean(sum_noise_covariates),b=0)
-  sum_active_covariates <- colSums(Model_AddiVortes_dir$posteriorDirichletWeights[1:5, ])
-  sum_noise_covariates <- colSums(Model_AddiVortes_dir$posteriorDirichletWeights[6:length(X_test[1,]), ])
-  plot(sum_active_covariates, type = "l", col = col_dir,
-       main = "Posteriot Weights",ylim = c(0,1) )
-  lines(sum_noise_covariates,col='red')
-  abline(a=mean(sum_active_covariates),b=0)
-  abline(a=mean(sum_noise_covariates),b=0)
+  old_par <- par(no.readonly = TRUE)
   
-  par(mfrow=c(1,1))
+  # Configure a tight 1x2 layout
+  par(mfrow = c(1, 2), mgp = c(2.5, 1, 0))
+  
+  num_covariates <- length(X_test[1, ])
+  
+  # --- Left Plot: Adaptive AddiVortes Weights ---
+  sum_active_local <- colSums(Model_AddiVortes_local$posteriorDirichletWeights[1:5, ])
+  sum_noise_local <- colSums(Model_AddiVortes_local$posteriorDirichletWeights[6:num_covariates, ])
+  
+  # Standard left margin, minimised top and right
+  par(mar = c(4, 4, 0.5, 0.5))
+  plot(sum_active_local, type = "l", col = col_adaptive,
+       xlab = "MCMC Iteration", ylab = expression("Sum of active and inactive "~ "s"[j]), 
+       main = "", ylim = c(0, 1))
+  lines(sum_noise_local, col = 'red')
+  abline(h = mean(sum_active_local), lty = 2)
+  abline(h = mean(sum_noise_local), col = 'red', lty = 2)
+  
+  # --- Right Plot: Dirichlet AddiVortes Weights ---
+  sum_active_dir <- colSums(Model_AddiVortes_dir$posteriorDirichletWeights[1:5, ])
+  sum_noise_dir <- colSums(Model_AddiVortes_dir$posteriorDirichletWeights[6:num_covariates, ])
+  
+  # Minimised left margin, no y-axis label
+  par(mar = c(4, 1.5, 0.5, 1))
+  plot(sum_active_dir, type = "l", col = col_dir,
+       xlab = "MCMC Iteration", ylab = "", 
+       main = "", ylim = c(0, 1))
+  lines(sum_noise_dir, col = 'red')
+  abline(h = mean(sum_active_dir), lty = 2)
+  abline(h = mean(sum_noise_dir), col = 'red', lty = 2)
+  
+  # Reset plotting parameters
+  par(old_par)
 }
 
 ### Graph 9 Momentum barchart ###
 {
+  old_par <- par(no.readonly = TRUE)
+  
   # 1. Calculate the mean, lower (2.5%), and upper (97.5%) bounds
   mean_momentum <- rowMeans(Model_AddiVortes_local$posteriorMomentum)
   lower_momentum <- apply(Model_AddiVortes_local$posteriorMomentum, 1, quantile, probs = 0.025)
   upper_momentum <- apply(Model_AddiVortes_local$posteriorMomentum, 1, quantile, probs = 0.975)
   
-  cov_names <- if(!is.null(names(Model_AddiVortes_local$xCentres))) names(Model_AddiVortes_local$xCentres) else paste0("X", 1:length(mean_momentum))
+  cov_names <- if(!is.null(names(Model_AddiVortes_local$xCentres))) names(Model_AddiVortes_local$xCentres) else paste0("X", seq_along(mean_momentum))
   
   # 2. Sort based on the mean
   ord <- order(mean_momentum, decreasing = FALSE)
@@ -842,23 +970,21 @@ col_bart <- "royalblue"
   max_vars_to_plot <- 20
   if (length(mean_momentum) > max_vars_to_plot) {
     ord <- tail(ord, max_vars_to_plot)
-    main_title <- paste("Top", max_vars_to_plot, "Mean Adaptive Momentum (95% CI)")
-  } else {
-    main_title <- "Mean Adaptive Momentum (95% CI)"
   }
   
-  max_name_len <- max(nchar(cov_names[ord]))
-  par(mar = c(5, max(4.1, max_name_len * 0.6), 4, 2) + 0.1)
+  # Dynamically adjust left margin for variable names; minimise top and right margins
+  name_margin <- max(4.1, max(nchar(cov_names[ord])) * 0.6)
+  par(mar = c(4, name_margin, 0.5, 1) + 0.1)
   
   # 3. Calculate dynamic xlim to ensure error bars aren't cut off
   x_min <- min(0, min(lower_momentum[ord])) 
   x_max <- max(upper_momentum[ord])
   
-  # 4. Save the bar midpoints into 'bp'
+  # 4. Save the bar midpoints into 'bp' (Title removed)
   bp <- barplot(mean_momentum[ord], horiz = TRUE, names.arg = cov_names[ord], las = 1,
                 col = col_adaptive, border = NA, xlab = "Mean Momentum Term",
-                main = main_title, cex.names = 0.8,
-                xlim = c(x_min, x_max * 1.05)) # Added dynamic x-axis limit
+                main = "", cex.names = 0.8,
+                xlim = c(x_min, x_max * 1.05))
   
   # 5. Draw the main horizontal error bar lines
   segments(x0 = lower_momentum[ord], y0 = bp, 
@@ -873,129 +999,238 @@ col_bart <- "royalblue"
   segments(x0 = upper_momentum[ord], y0 = bp - epsilon, 
            x1 = upper_momentum[ord], y1 = bp + epsilon, 
            col = "black", lwd = 1.5)
+  
+  # Reset plotting parameters
+  par(old_par)
 }
 
 ### Graph 9.5 Momentum traces ###
 {
-  par(mfrow=c(2,5))
-  plot(Model_AddiVortes_local$posteriorMomentum[1,], type = "l", col = col_adaptive,
-       main = "Posterior Alpha Trace",
-       xlab = "MCMC Iteration", ylab = "Posterior Momentum for x_1")
-  plot(Model_AddiVortes_local$posteriorMomentum[2,], type = "l", col = col_adaptive,
-       main = "Posterior Alpha Trace",
-       xlab = "MCMC Iteration", ylab = "Posterior Momentum")
-  plot(Model_AddiVortes_local$posteriorMomentum[3,], type = "l", col = col_adaptive,
-       main = "Posterior Alpha Trace",
-       xlab = "MCMC Iteration", ylab = "Posterior Momentum for x_1")
-  plot(Model_AddiVortes_local$posteriorMomentum[4,], type = "l", col = col_adaptive,
-       main = "Posterior Alpha Trace",
-       xlab = "MCMC Iteration", ylab = "Posterior Momentum for x_1")
-  plot(Model_AddiVortes_local$posteriorMomentum[5,], type = "l", col = col_adaptive,
-       main = "Posterior Alpha Trace",
-       xlab = "MCMC Iteration", ylab = "Posterior Momentum for x_1")
-  plot(Model_AddiVortes_local$posteriorMomentum[10,], type = "l", col = col_adaptive,
-       main = "Posterior Alpha Trace",
-       xlab = "MCMC Iteration", ylab = "Posterior Momentum for x_1")
-  plot(Model_AddiVortes_local$posteriorMomentum[159,], type = "l", col = col_adaptive,
-       main = "Posterior Alpha Trace",
-       xlab = "MCMC Iteration", ylab = "Posterior Momentum for x_1")
-  plot(Model_AddiVortes_local$posteriorMomentum[475,], type = "l", col = col_adaptive,
-       main = "Posterior Alpha Trace",
-       xlab = "MCMC Iteration", ylab = "Posterior Momentum for x_1")
-  plot(Model_AddiVortes_local$posteriorMomentum[271,], type = "l", col = col_adaptive,
-       main = "Posterior Alpha Trace",
-       xlab = "MCMC Iteration", ylab = "Posterior Momentum for x_1")
-  plot(Model_AddiVortes_local$posteriorMomentum[222,], type = "l", col = col_adaptive,
-       main = "Posterior Alpha Trace",
-       xlab = "MCMC Iteration", ylab = "Posterior Momentum for x_1")
+  old_par <- par(no.readonly = TRUE)
   
-  par(mfrow=c(1,1))
+  # Configure a 2x5 grid with small inner gaps and shared outer margins
+  par(mfrow = c(2, 5), mar = c(0.4, 0.4, 0.4, 0.4), oma = c(4, 4, 1, 1), mgp = c(2.5, 1, 0))
+  
+  trace_indices <- c(1, 2, 3, 4, 5, 25, 253, 254, 271, 222)
+  
+  shared_ylim <- range(Model_AddiVortes_local$posteriorMomentum[trace_indices, ])
+  
+  # Helper function to draw each trace panel cleanly
+  plot_trace_panel <- function(idx, row, col) {
+    is_top_row <- row == 1
+    show_y <- col == 1
+    show_x <- row == 2
+    
+    # Draw the plot without default axes or labels
+    plot(Model_AddiVortes_local$posteriorMomentum[idx, ], 
+         type = 'l', col = col_adaptive, lwd = 1.5, ylim = shared_ylim,
+         axes = FALSE, main = "", xlab = "", ylab = "")
+    
+    # Draw a clean border box around each plot
+    box()
+    
+    # Add y-axis ticks only to the first column, allowing them to bleed outside
+    if (show_y) {
+      axis(2, las = 1, xpd = NA)
+    }
+    
+    # Add x-axis ticks only to the bottom row, allowing them to bleed outside
+    if (show_x) {
+      axis(1, xpd = NA)
+    }
+    
+    # Add the dashed red line for the burn-in threshold
+    abline(v = 1500, col = "red", lty = 2)
+  }
+  
+  # Plot all 10 traces across the 2x5 grid
+  for (i in seq_along(trace_indices)) {
+    idx <- trace_indices[i]
+    current_row <- if (i <= 5) 1 else 2
+    current_col <- if (i %% 5 == 0) 5 else i %% 5
+    
+    plot_trace_panel(idx, row = current_row, col = current_col)
+  }
+  
+  # Add the shared outer labels
+  mtext("MCMC Iteration", side = 1, outer = TRUE, line = 2.5)
+  mtext("Posterior Momentum", side = 2, outer = TRUE, line = 2.5)
+  
+  # Reset plotting parameters
+  par(old_par)
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-### Graph 8 RMSE values comparison ###
+### Graph 9.7 Momentum/Count ratio ###
 {
+  old_par <- par(no.readonly = TRUE)
+  
+  # Configure a 2x5 grid with small inner gaps and shared outer margins
+  par(mfrow = c(2, 5), mar = c(0.4, 0.4, 0.4, 0.4), oma = c(4, 4, 1, 1), mgp = c(2.5, 1, 0))
+  
+  var_indices <- 1:10
+  
+  ratio_local <- matrix(nrow = 10, ncol = 2500)
+  
+  for(i in var_indices){
+    counts <- abs(Model_AddiVortes_local$posteriorAugmentedCounts[i, ])
+    momentum <- abs(Model_AddiVortes_local$posteriorMomentum[i, 1501:4000])
+    
+    # If the count is 0, set the denominator to 1 to prevent division by zero
+    adjusted_counts <- ifelse(counts == 0, 1, counts)
+    
+    # Compute the element-wise ratios for the selected covariates
+    ratio_local[i, ] <- momentum / adjusted_counts
+  }
+  
+  # Calculate a shared y-axis limit safely
+  valid_ratios <- ratio_local[is.finite(ratio_local)]
+  shared_ylim <- c(0, max(valid_ratios, na.rm = TRUE) * 1.05)
+  
+  # Helper function to draw each trace panel cleanly
+  plot_trace_panel <- function(data, trace_col, row, col) {
+    # Draw the plot without default axes or labels
+    plot(data, type = 'l', col = trace_col, lwd = 1.5, ylim = shared_ylim,
+         axes = FALSE, main = "", xlab = "", ylab = "")
+    
+    # Draw a clean border box around each plot
+    box()
+    
+    # Add y-axis ticks only to the first column, allowing them to bleed outside
+    if (col == 1) {
+      axis(2, las = 1, xpd = NA)
+    }
+    
+    # Add x-axis ticks only to the bottom row, allowing them to bleed outside
+    if (row == 2) {
+      axis(1, xpd = NA)
+    }
+  }
+  
+  # Plot all 10 covariates across the 2x5 grid
+  for (idx in seq_along(var_indices)) {
+    current_row <- if (idx <= 5) 1 else 2
+    current_col <- if (idx %% 5 == 0) 5 else idx %% 5
+    
+    plot_trace_panel(ratio_local[idx, ], col_adaptive, row = current_row, col = current_col)
+  }
+  
+  # Add the shared outer labels
+  mtext("MCMC iteration", side = 1, outer = TRUE, line = 2.5)
+  mtext("Momentum / Augmented Count", side = 2, outer = TRUE, line = 2.5)
+  
+  # Reset plotting parameters
+  par(old_par)
+}
+
+### Graph 8 RMSE values comparison ### Time ~ 4 minutes
+{
+  library(parallel)
+  library(pbapply)
+  library(BART)
+  
+  
+  tau<-20
+  boost_val<-20
+  penalty_val<-22
+  decay_val<-0.9
+  alpha_val<-1
+  a_alpha_val <- 0.5
+  b_alpha_val <- 1
+  kappa_val <- 0.8
+  
+  # Detect available cores and leave one free for system stability
+  n_cores <- max(1, detectCores() - 3)
+  cl <- makeCluster(n_cores)
+  
+  # Export all current variables and functions from your global environment to the workers
+  clusterExport(cl, ls())
+  
+  library(doRNG)
+  registerDoRNG(seed = 539)
+  # Ensure the BART package is loaded on all worker nodes
+  clusterEvalQ(cl, { 
+    library(BART)
+    devtools::load_all() 
+  })
+  
   n_iterations <- 5
   model_names <- c("Original", "Dirichlet", "Adaptive", "DART")
-  rmse_results <- matrix(NA, nrow = n_iterations, ncol = length(model_names))
-  colnames(rmse_results) <- model_names
   
-  # Initialise a text progress bar to monitor the loop
-  pb <- txtProgressBar(min = 0, max = n_iterations, style = 3)
+  cat("Running parallel simulations across", n_cores, "cores...\n")
   
-  for(i in 1:n_iterations) {
+  # Run the parallelised loop with a progress bar
+  results_list <- pblapply(1:n_iterations, function(i) {
     
     # 1. Generate new data for this specific iteration
-    iter_train <- sim_fried(500, 500, sqrt(10))
-    iter_test <- sim_fried(500, 500, sqrt(10))
+    iter_train <- sim_fried(300, 400, sqrt(10))
+    iter_test <- sim_fried(300, 400, sqrt(10))
     
     # 2. Fit the models using your predefined hyperparameters
-    fit_orig <- AddiVortes(iter_train$Y, iter_train$X, m=200, thinning=1, varSelMode=0, 
-                           totalMCMCIter=5000, mcmcBurnIn=2500, dirichletWarmup=1000, nu=6, q=0.9, 
-                           updateAlpha=FALSE, alpha=alpha_val, a_alpha=a_alpha_val, b_alpha=b_alpha_val, 
-                           adaptBoost=boost_val, adaptPenalty=penalty_val, momentumDecay=decay_val, 
-                           kappa=0.6, numChains=1, IntialSigma="LASSO", tau=100, splitMode=1)
+    fit_orig <- AddiVortes(iter_train$Y, iter_train$X, m=200,Omega=1.5,thinning = 1,varSelMode = 0,totalMCMCIter = 5000, mcmcBurnIn = 2500,dirichletWarmup = 1000,nu=6,q=0.9,updateAlpha = TRUE,alpha=alpha_val,a_alpha = a_alpha_val,b_alpha=b_alpha_val,adaptBoost = boost_val, adaptPenalty = penalty_val, momentumDecay = decay_val, kappa = kappa_val,numChains = 1,IntialSigma = "LASSO",tau=tau,splitMode =1, showProgress=FALSE)
     
-    fit_dir <- AddiVortes(iter_train$Y, iter_train$X, m=200, thinning=1, varSelMode=1, 
-                          totalMCMCIter=5000, mcmcBurnIn=2500, dirichletWarmup=1000, nu=6, q=0.9, 
-                          updateAlpha=FALSE, alpha=alpha_val, a_alpha=a_alpha_val, b_alpha=b_alpha_val, 
-                          adaptBoost=boost_val, adaptPenalty=penalty_val, momentumDecay=decay_val, 
-                          kappa=0.6, numChains=1, IntialSigma="LASSO", tau=100, splitMode=1)
+    fit_dir <- AddiVortes(iter_train$Y, iter_train$X, m=200,Omega=1.5,thinning = 1,varSelMode = 1,totalMCMCIter = 5000, mcmcBurnIn = 2500,dirichletWarmup = 1000,nu=6,q=0.9,updateAlpha = TRUE,alpha=alpha_val,a_alpha = a_alpha_val,b_alpha=b_alpha_val,adaptBoost = boost_val, adaptPenalty = penalty_val, momentumDecay = decay_val, kappa = kappa_val,numChains = 1,IntialSigma = "LASSO",tau=tau,splitMode =1, showProgress=FALSE)
     
-    fit_adapt <- AddiVortes(iter_train$Y, iter_train$X, m=200, thinning=1, varSelMode=2, 
-                            totalMCMCIter=5000, mcmcBurnIn=2500, dirichletWarmup=1000, nu=6, q=0.9, 
-                            updateAlpha=FALSE, alpha=alpha_val, a_alpha=a_alpha_val, b_alpha=b_alpha_val, 
-                            adaptBoost=boost_val, adaptPenalty=penalty_val, momentumDecay=decay_val, 
-                            kappa=0.6, numChains=1, IntialSigma="LASSO", tau=100, splitMode=1)
+    fit_adapt <- AddiVortes(iter_train$Y, iter_train$X, m=200,Omega=1.5,thinning = 1,varSelMode = 2,totalMCMCIter = 5000, mcmcBurnIn = 2500,dirichletWarmup = 1000,nu=6,q=0.9,updateAlpha = TRUE,alpha=alpha_val,a_alpha = a_alpha_val,b_alpha=b_alpha_val,adaptBoost = boost_val, adaptPenalty = penalty_val, momentumDecay = decay_val, kappa = kappa_val,numChains = 1,IntialSigma = "LASSO",tau=tau,splitMode =1, showProgress=FALSE)
     
     fit_dart <- wbart(iter_train$X, iter_train$Y, iter_test$X, ntree=200, 
                       ndpost=2500, nskip=2500, sparse=TRUE)
     
     # 3. Calculate point predictions (posterior means) for the test set
-    pred_orig <- predict(fit_orig,as.matrix(iter_test$X))
-    pred_dir <- predict(fit_dir,as.matrix(iter_test$X))
-    pred_adapt <- predict(fit_adapt,as.matrix(iter_test$X))
+    pred_orig <- predict(fit_orig, as.matrix(iter_test$X), showProgress=FALSE)
+    pred_dir <- predict(fit_dir, as.matrix(iter_test$X), showProgress=FALSE)
+    pred_adapt <- predict(fit_adapt, as.matrix(iter_test$X), showProgress=FALSE)
     pred_dart <- colMeans(fit_dart$yhat.test)
     
-    # 4. Calculate and store the RMSE against the true test mu
-    rmse_results[i, "Original"] <- sqrt(mean((pred_orig - iter_test$mu)^2))
-    rmse_results[i, "Dirichlet"] <- sqrt(mean((pred_dir - iter_test$mu)^2))
-    rmse_results[i, "Adaptive"] <- sqrt(mean((pred_adapt - iter_test$mu)^2))
-    rmse_results[i, "DART"] <- sqrt(mean((pred_dart - iter_test$mu)^2))
+    # 4. Calculate and return the RMSE against the true test mu
+    c(
+      Original = sqrt(mean((pred_orig - iter_test$mu)^2)),
+      Dirichlet = sqrt(mean((pred_dir - iter_test$mu)^2)),
+      Adaptive = sqrt(mean((pred_adapt - iter_test$mu)^2)),
+      DART = sqrt(mean((pred_dart - iter_test$mu)^2))
+    )
+  }, cl = cl)
+  
+  stopCluster(cl)
+  
+  # Combine the individual list results into the final matrix
+  rmse_results <- do.call(rbind, results_list)
+  rownames(rmse_results) <- NULL
+  
+  
+    old_par <- par(no.readonly = TRUE)
     
-    # Update the progress bar
-    setTxtProgressBar(pb, i)
-  }
-  
-  close(pb)
-  
-  { par(mfrow=c(1,1))
+    # Configure a tight 1x1 layout with a minimised top margin
+    par(mfrow = c(1, 1), mar = c(4, 4, 1, 1) + 0.1)
+    
     # 1. Align the custom colours with the column order of rmse_results
-    # ("Original", "Dirichlet", "Adaptive", "DART")
     simulation_colours <- c(col_original, col_dir, col_adaptive, col_dart)
     
-    # 2. Generate the boxplot for the 100 independent runs
+    # 2. Generate the boxplot for the independent runs with no title
     boxplot(rmse_results,
-            main = "Out-of-Sample RMSE Across 100 Simulations (Friedman Dataset)",
+            main = "",
             xlab = "RMSE",
             col = simulation_colours,
             pch = 16,
             outcol = rgb(0, 0, 0, alpha = 0.3),
-            horizontal=TRUE
-    ) 
-  }
+            horizontal = TRUE
+    )
+    
+    # Reset plotting parameters
+    par(old_par)
+  
 }
+
+
+
+
+
+
+
+
+
+
+
+
 
 ### Graph 9 Hyperparmeter robustness ###
 {
@@ -1111,3 +1346,4 @@ for(i in 2:length(kappa)){
 }
 
 abline(v=1500)
+
