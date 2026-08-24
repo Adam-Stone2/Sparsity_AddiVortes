@@ -10,8 +10,8 @@
   }
   
   set.seed(453)
-  training_data <- sim_fried(200, 400, sqrt(10))
-  test_data <- sim_fried(200,400, sqrt(10))
+  training_data <- sim_fried(250, 200, sqrt(1))
+  test_data <- sim_fried(250,200, sqrt(1))
   X_train <- training_data$X
   X_test <-test_data$X
   Y_test_mu<-test_data$mu
@@ -223,19 +223,38 @@
   Y_test_mu<-test_data$mu
 }
 
-set.seed(136)
+#correlated dataset
+{
+# Generates Correlated Data (Interaction-based, AR(1) dependence)
+generate_dataset_2 <- function(n, p, sigma,rho) {
+  Sigma <- outer(1:p, 1:p, function(j, k) rho^abs(j - k))
+  X <- MASS::mvrnorm(n, mu = rep(0, p), Sigma = Sigma)
+  colnames(X) <- paste0("X", 1:p)
+  f_x <- 2 * X[, 1] * X[, 4] + 2 * X[, 7] * X[, 10]
+  y <- f_x + rnorm(n, 0, sigma)
+  return(list(X = X, Y = y,mu=f_x, true_vars = paste0("X", c(1, 4, 7, 10))))
+}
+  set.seed(74)
+  training_data <- generate_dataset_2(250, 75, sqrt(1),0.9)
+  test_data <- generate_dataset_2(250,75, sqrt(1),0.9)
+  X_train <- training_data$X
+  X_test <-test_data$X
+  Y_test_mu<-test_data$mu
+  
+}
+set.seed(186)
 
 
 
-tau<-5
-boost_val<-0.5
-penalty_val<-0.5
-decay_val<-0.7
+tau<-20
+boost_val<-0.3
+penalty_val<-0.3
+decay_val<-0.6
 alpha_val<-1
 a_alpha_val <- 0.5
 b_alpha_val <- 1
 
-Model_AddiVortes_local <- AddiVortes(training_data$Y, X_train,m=200,thinning = 1,varSelMode = 2,totalMCMCIter = 5000, mcmcBurnIn = 2500,dirichletWarmup = 1000,nu=6,q=0.9,updateAlpha = TRUE,alpha=alpha_val,a_alpha = a_alpha_val,b_alpha=b_alpha_val,adaptBoost = boost_val, adaptPenalty = penalty_val, momentumDecay = decay_val, kappa = 0.6,numChains = 1,IntialSigma = "LASSO",tau=50,splitMode =1)#,rho_alpha = 1)#,power = p_init_val, p_shape = p_shape_val, p_rate = p_rate_val, p_sd = p_sd_val)
+Model_AddiVortes_local <- AddiVortes(training_data$Y, X_train,m=200,Omega = 1.5,LambdaRate = 4,thinning = 1,varSelMode = 2,totalMCMCIter = 5000, mcmcBurnIn = 2500,dirichletWarmup = 1000,nu=6,q=0.9,updateAlpha = TRUE,alpha=alpha_val,a_alpha = a_alpha_val,b_alpha=b_alpha_val,adaptBoost = boost_val, adaptPenalty = penalty_val, momentumDecay = decay_val, kappa = 0.6,numChains = 1,IntialSigma = "LASSO",tau=tau,splitMode =1)#,rho_alpha = 1)#,power = p_init_val, p_shape = p_shape_val, p_rate = p_rate_val, p_sd = p_sd_val)
 
 Model_AddiVortes_original <- AddiVortes(training_data$Y, X_train,m=200,thinning = 1,varSelMode = 0,totalMCMCIter = 5000, mcmcBurnIn = 2500,dirichletWarmup = 1000,nu=6,q=0.9,updateAlpha = FALSE,alpha=alpha_val,a_alpha = a_alpha_val,b_alpha=b_alpha_val,adaptBoost = boost_val, adaptPenalty = penalty_val, momentumDecay = decay_val, kappa = 0.6,numChains = 1,IntialSigma = "LASSO",tau=20,splitMode =1)#,rho_alpha = 1)#,power = p_init_val, p_shape = p_shape_val, p_rate = p_rate_val, p_sd = p_sd_val)
 
@@ -261,7 +280,7 @@ col_bart <- "royalblue"
   par(mgp = c(2.5, 1, 0))
   plot(Model_AddiVortes_local$posteriorSigma, type = "l", col = col_adaptive, lwd = 2,
        main = expression("Posterior"~ sigma^2~" Trace Plot"),
-       xlab = "MCMC Iteration",ylab = expression(sigma^2 ~ "sample"), ylim = c(1,50))
+       xlab = "MCMC Iteration",ylab = expression(sigma^2 ~ "sample"), ylim = c(0,3))
   lines(Model_AddiVortes_original$posteriorSigma, col= col_original)
   lines(Model_AddiVortes_dir$posteriorSigma,  col = col_dart)
   lines(Model_DART$sigma[2500:5000]^2, col = col_dir)
@@ -311,6 +330,7 @@ col_bart <- "royalblue"
   
   par(mfrow=c(1,1))
 }
+
 
 ### Graph 3 Augmented counts ###
 {
@@ -914,8 +934,52 @@ col_bart <- "royalblue"
 
 
 
-
-
+##F1_score
+{# Define the total number of covariates and the true active set
+  p <- 75
+  true_active <- c(1, 4, 7, 10)
+  
+  # Create the ground truth binary vector
+  y_true <- rep(0, p)
+  y_true[true_active] <- 1
+  
+  # Define a function to calculate F1 for a single iteration's prediction vector
+  calc_f1_vector <- function(y_pred) {
+    tp <- sum(y_true == 1 & y_pred == 1)
+    fp <- sum(y_true == 0 & y_pred == 1)
+    fn <- sum(y_true == 1 & y_pred == 0)
+    
+    precision <- ifelse((tp + fp) == 0, 0, tp / (tp + fp))
+    recall    <- ifelse((tp + fn) == 0, 0, tp / (tp + fn))
+    
+    f1 <- ifelse((precision + recall) == 0, 0, 2 * (precision * recall) / (precision + recall))
+    return(f1)
+  }
+  
+  # Define a tiny tolerance to account for floating-point noise in continuous weights
+  tol <- 1e-8
+  
+  # Binarise AddiVortes weights (transposing so iterations are rows, matching DART)
+  inc_local <- t(Model_AddiVortes_local$posteriorVariableSelection) > tol
+  inc_orig  <- t(Model_AddiVortes_original$posteriorVariableSelection) > tol
+  inc_dir   <- t(Model_AddiVortes_dir$posteriorVariableSelection) > tol
+  
+  # Binarise DART split counts (iterations are already rows)
+  inc_dart <- Model_DART$varcount > 0
+  
+  # Calculate the mean F1 score across all posterior iterations
+  f1_local <- mean(apply(inc_local, 1, calc_f1_vector))
+  f1_orig  <- mean(apply(inc_orig, 1, calc_f1_vector))
+  f1_dir   <- mean(apply(inc_dir, 1, calc_f1_vector))
+  f1_dart  <- mean(apply(inc_dart, 1, calc_f1_vector))
+  
+  # Compile and print the final F1 scores
+  f1_results <- data.frame(
+    Model = c("AV-Adaptive", "AV-Original", "AV-Dirichlet", "DART"),
+    Mean_Posterior_F1 = c(f1_local, f1_orig, f1_dir, f1_dart)
+  )
+  
+  print(f1_results)}
 
 
 

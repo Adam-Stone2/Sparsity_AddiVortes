@@ -10,8 +10,8 @@
   }
   
   set.seed(453)
-  training_data <- sim_fried(500, 500, sqrt(10))
-  test_data <- sim_fried(500,500, sqrt(10))
+  training_data <- sim_fried(200,400 , sqrt(10))
+  test_data <- sim_fried(200,400, sqrt(10))
   X_train <- training_data$X
   X_test <-test_data$X
   Y_test_mu<-test_data$mu
@@ -19,7 +19,7 @@
 
 set.seed(136)
 
-tau<-5
+tau<-50
 boost_val<-0.5
 penalty_val<-0.5
 decay_val<-0.7
@@ -27,11 +27,11 @@ alpha_val<-1
 a_alpha_val <- 0.5
 b_alpha_val <- 1
 
-Model_AddiVortes_local <- AddiVortes(training_data$Y, X_train,m=200,thinning = 1,varSelMode = 2,totalMCMCIter = 5000, mcmcBurnIn = 2500,dirichletWarmup = 1000,nu=6,q=0.9,updateAlpha = TRUE,alpha=alpha_val,a_alpha = a_alpha_val,b_alpha=b_alpha_val,adaptBoost = boost_val, adaptPenalty = penalty_val, momentumDecay = decay_val, kappa = 0.6,numChains = 1,IntialSigma = "LASSO",tau=50,splitMode =1)#,rho_alpha = 1)#,power = p_init_val, p_shape = p_shape_val, p_rate = p_rate_val, p_sd = p_sd_val)
+Model_AddiVortes_local <- AddiVortes(training_data$Y, X_train,m=200,thinning = 1,varSelMode = 2,Omega=1,LambdaRate=4,totalMCMCIter = 5000, mcmcBurnIn = 2500,dirichletWarmup = 1000,nu=6,q=0.9,updateAlpha = TRUE,alpha=alpha_val,a_alpha = a_alpha_val,b_alpha=b_alpha_val,adaptBoost = boost_val, adaptPenalty = penalty_val, momentumDecay = decay_val, kappa = 0.6,numChains = 1,IntialSigma = "LASSO",tau=tau,splitMode =1)#,rho_alpha = 1)#,power = p_init_val, p_shape = p_shape_val, p_rate = p_rate_val, p_sd = p_sd_val)
 
-Model_AddiVortes_original <- AddiVortes(training_data$Y, X_train,m=200,thinning = 1,varSelMode = 0,totalMCMCIter = 5000, mcmcBurnIn = 2500,dirichletWarmup = 1000,nu=6,q=0.9,updateAlpha = FALSE,alpha=alpha_val,a_alpha = a_alpha_val,b_alpha=b_alpha_val,adaptBoost = boost_val, adaptPenalty = penalty_val, momentumDecay = decay_val, kappa = 0.6,numChains = 1,IntialSigma = "LASSO",tau=20,splitMode =1)#,rho_alpha = 1)#,power = p_init_val, p_shape = p_shape_val, p_rate = p_rate_val, p_sd = p_sd_val)
+Model_AddiVortes_original <- AddiVortes(training_data$Y, X_train,m=200,thinning = 1,varSelMode = 0,totalMCMCIter = 5000, mcmcBurnIn = 2500,dirichletWarmup = 1000,nu=6,q=0.9,updateAlpha = FALSE,alpha=alpha_val,a_alpha = a_alpha_val,b_alpha=b_alpha_val,adaptBoost = boost_val, adaptPenalty = penalty_val, momentumDecay = decay_val, kappa = 0.6,numChains = 1,IntialSigma = "LASSO",tau=tau,splitMode =1)#,rho_alpha = 1)#,power = p_init_val, p_shape = p_shape_val, p_rate = p_rate_val, p_sd = p_sd_val)
 
-Model_AddiVortes_dir <- AddiVortes(training_data$Y, X_train,m=200,thinning = 1,varSelMode = 1,totalMCMCIter = 5000, mcmcBurnIn = 2500,dirichletWarmup = 1000,nu=6,q=0.9,updateAlpha = TRUE,alpha=alpha_val,a_alpha = a_alpha_val,b_alpha=b_alpha_val,adaptBoost = boost_val, adaptPenalty = penalty_val, momentumDecay = decay_val, kappa = 0.6,numChains = 1,IntialSigma = "LASSO",tau=100,splitMode =1)#,rho_alpha = 1)#,power = p_init_val, p_shape = p_shape_val, p_rate = p_rate_val, p_sd = p_sd_val)
+Model_AddiVortes_dir <- AddiVortes(training_data$Y, X_train,m=200,thinning = 1,varSelMode = 1,totalMCMCIter = 5000, mcmcBurnIn = 2500,dirichletWarmup = 1000,nu=6,q=0.9,updateAlpha = TRUE,alpha=alpha_val,a_alpha = a_alpha_val,b_alpha=b_alpha_val,adaptBoost = boost_val, adaptPenalty = penalty_val, momentumDecay = decay_val, kappa = 0.6,numChains = 1,IntialSigma = "LASSO",tau=tau,splitMode =1)#,rho_alpha = 1)#,power = p_init_val, p_shape = p_shape_val, p_rate = p_rate_val, p_sd = p_sd_val)
 
 Model_DART<-wbart(X_train,training_data$Y,X_test,ntree = 200,ndpost = 2500, nskip = 2500,sparse = TRUE)
 
@@ -53,8 +53,8 @@ col_bart <- "royalblue"
        main = expression("Posterior"~ sigma^2~" Trace Plot"),
        xlab = "MCMC Iteration",ylab = expression(sigma^2 ~ "sample"), ylim = c(1,12))
   lines(Model_AddiVortes_original$posteriorSigma, col= col_original)
-  lines(Model_AddiVortes_dir$posteriorSigma,  col = col_dart)
-  lines(Model_DART$sigma[2500:5000]^2, col = col_dir)
+  lines(Model_AddiVortes_dir$posteriorSigma,  col = col_dir)
+  lines(Model_DART$sigma[2500:5000]^2, col = col_dart)
   #lines(Model_BART$sigma[2500:5000]^2, col = col_bart)
   abline(10,0,)
   legend("bottomright", legend = c("Adaptive AddiVortes","Dirichlet AddiVortes", "Original AddiVortes", "DART" ,expression("True"~sigma^2~"value (10)")),
@@ -87,7 +87,7 @@ col_bart <- "royalblue"
   
   par(mfrow=c(1,2))
   plot(average_dimensions_adaptive, type = "l", col = col_adaptive, lwd = 2,
-       xlab = "MCMC Iteration", ylab = "Average number of dimensions",ylim=c(0.5,2.5))
+       xlab = "MCMC Iteration", ylab = "Average number of dimensions",ylim=c(0.5,5))
   lines(average_dimensions_dir,col= col_dir)
   lines(average_dimensions_original,col= col_original)
   

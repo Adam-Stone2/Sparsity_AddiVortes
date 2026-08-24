@@ -371,12 +371,10 @@ bool in_vector(int value, const std::vector<int>& vec) {
                               double sum_notin_new,
                               int var_sel_mode,
                               double log_varsel_struct_ratio) {
-    (void)old_centres;
     (void)new_centres;
+    (void)d_new;
     (void)sum_notin_old;
     (void)sum_notin_new;
-    
-    double prob = fmin(1.0 - 1e-10, fmax(1e-10, omega / p));
     
     double sum_log_old = 0.0;
     double sum_log_new = 0.0;
@@ -402,26 +400,30 @@ bool in_vector(int value, const std::vector<int>& vec) {
       + (sigma2mu / (2.0 * safe_sigma2)) * (sum_R2_new - sum_R2_old);
     
     if (mod == "AD") {
-      double t_num = R::dbinom(d_new - 1, p - 1, prob, 0);
-      double t_den = R::dbinom(d_old - 1, p - 1, prob, 0);
+      double log_explicit = log(fmax(static_cast<double>(p - d_old), 1e-16))
+      - log(fmax(static_cast<double>(d_old), 1e-16))
+      + log(fmax(omega, 1e-16))
+      - log(fmax(static_cast<double>(p) - omega, 1e-16));
       
-      ratio += log(fmax(t_num / fmax(t_den, 1e-16), 1e-16));
+      ratio += log_explicit;
       
       if (var_sel_mode > 0) {
         ratio += log_varsel_struct_ratio;
       }
       
-      if (d_new == 2) {
+      if (d_old + 1 == 2) {
         ratio += log(0.5);
-      } else if (d_new == p) {
+      } else if (d_old + 1 == p) {
         ratio += log(2.0);
       }
       
     } else if (mod == "RD") {
-      double t_num = R::dbinom(d_new - 1, p - 1, prob, 0);
-      double t_den = R::dbinom(d_old - 1, p - 1, prob, 0);
+      double log_explicit = log(fmax(static_cast<double>(d_old - 1), 1e-16))
+      - log(fmax(static_cast<double>(p - d_old + 1), 1e-16))
+      + log(fmax(static_cast<double>(p) - omega, 1e-16))
+      - log(fmax(omega, 1e-16));
       
-      ratio += log(fmax(t_num / fmax(t_den, 1e-16), 1e-16));
+      ratio += log_explicit;
       
       if (var_sel_mode > 0) {
         ratio += log_varsel_struct_ratio;
@@ -434,31 +436,25 @@ bool in_vector(int value, const std::vector<int>& vec) {
       }
       
     } else if (mod == "AC") {
-      double t_num = R::dpois(new_centres - 1, lambda, 0);
-      double t_den = R::dpois(new_centres - 2, lambda, 0);
+      double log_explicit = log(fmax(lambda, 1e-16))
+      - log(fmax(static_cast<double>(old_centres), 1e-16));
       
-      ratio +=
-        log(fmax(t_num / fmax(t_den, 1e-16), 1e-16))
-        + log(1.0 / static_cast<double>(new_centres))
-        + 0.5 * log(safe_sigma2);
-        
-        if (new_centres == 2) {
-          ratio += log(0.5);
-        }
-        
+      ratio += log_explicit + 0.5 * log(safe_sigma2);
+      
+      if (old_centres + 1 == 2) {
+        ratio += log(0.5);
+      }
+      
     } else if (mod == "RC") {
-      double t_num = R::dpois(new_centres - 1, lambda, 0);
-      double t_den = R::dpois(new_centres, lambda, 0);
+      double log_explicit = log(fmax(static_cast<double>(old_centres - 1), 1e-16))
+      - log(fmax(lambda, 1e-16));
       
-      ratio +=
-        log(fmax(t_num / fmax(t_den, 1e-16), 1e-16))
-        + log(static_cast<double>(new_centres) + 1.0)
-        - 0.5 * log(safe_sigma2);
-        
-        if (new_centres == 1) {
-          ratio += log(2.0);
-        }
-        
+      ratio += log_explicit - 0.5 * log(safe_sigma2);
+      
+      if (old_centres - 1 == 1) {
+        ratio += log(2.0);
+      }
+      
     } else if (mod == "Swap") {
       if (var_sel_mode > 0) {
         ratio += log_varsel_struct_ratio;
@@ -481,10 +477,10 @@ bool in_vector(int value, const std::vector<int>& vec) {
                               double sum_notin_new,
                               int var_sel_mode,
                               double log_varsel_struct_ratio) {
+    (void)new_c;
+    (void)new_d;
     (void)sum_notin_old;
     (void)sum_notin_new;
-    
-    double prob = fmin(1.0 - 1e-10, fmax(1e-10, hypers.omega / p));
     
     double ratio =
       -0.5 * (new_c - old_c) * log(hypers.sigma2mu)
@@ -492,26 +488,30 @@ bool in_vector(int value, const std::vector<int>& vec) {
       + 0.5 * (StatsNew.quad_form - StatsOld.quad_form);
       
       if (mod == "AD") {
-        double t_num = R::dbinom(new_d - 1, p - 1, prob, 0);
-        double t_den = R::dbinom(old_d - 1, p - 1, prob, 0);
+        double log_explicit = log(fmax(static_cast<double>(p - old_d), 1e-16))
+        - log(fmax(static_cast<double>(old_d), 1e-16))
+        + log(fmax(hypers.omega, 1e-16))
+        - log(fmax(static_cast<double>(p) - hypers.omega, 1e-16));
         
-        ratio += log(fmax(t_num / fmax(t_den, 1e-16), 1e-16));
+        ratio += log_explicit;
         
         if (var_sel_mode > 0) {
           ratio += log_varsel_struct_ratio;
         }
         
-        if (new_d == 2) {
+        if (old_d + 1 == 2) {
           ratio += log(0.5);
-        } else if (new_d == p) {
+        } else if (old_d + 1 == p) {
           ratio += log(2.0);
         }
         
       } else if (mod == "RD") {
-        double t_num = R::dbinom(new_d - 1, p - 1, prob, 0);
-        double t_den = R::dbinom(old_d - 1, p - 1, prob, 0);
+        double log_explicit = log(fmax(static_cast<double>(old_d - 1), 1e-16))
+        - log(fmax(static_cast<double>(p - old_d + 1), 1e-16))
+        + log(fmax(static_cast<double>(p) - hypers.omega, 1e-16))
+        - log(fmax(hypers.omega, 1e-16));
         
-        ratio += log(fmax(t_num / fmax(t_den, 1e-16), 1e-16));
+        ratio += log_explicit;
         
         if (var_sel_mode > 0) {
           ratio += log_varsel_struct_ratio;
@@ -524,26 +524,22 @@ bool in_vector(int value, const std::vector<int>& vec) {
         }
         
       } else if (mod == "AC") {
-        double t_num = R::dpois(new_c - 1, hypers.lambda_poisson, 0);
-        double t_den = R::dpois(new_c - 2, hypers.lambda_poisson, 0);
+        double log_explicit = log(fmax(hypers.lambda_poisson, 1e-16))
+        - log(fmax(static_cast<double>(old_c), 1e-16));
         
-        ratio +=
-          log(fmax(t_num / fmax(t_den, 1e-16), 1e-16))
-          + log(1.0 / static_cast<double>(new_c));
+        ratio += log_explicit;
         
-        if (new_c == 2) {
+        if (old_c + 1 == 2) {
           ratio += log(0.5);
         }
         
       } else if (mod == "RC") {
-        double t_num = R::dpois(new_c - 1, hypers.lambda_poisson, 0);
-        double t_den = R::dpois(new_c, hypers.lambda_poisson, 0);
+        double log_explicit = log(fmax(static_cast<double>(old_c - 1), 1e-16))
+        - log(fmax(hypers.lambda_poisson, 1e-16));
         
-        ratio +=
-          log(fmax(t_num / fmax(t_den, 1e-16), 1e-16))
-          + log(static_cast<double>(new_c) + 1.0);
+        ratio += log_explicit;
         
-        if (new_c == 1) {
+        if (old_c - 1 == 1) {
           ratio += log(2.0);
         }
         
@@ -1495,7 +1491,10 @@ extern "C" {
     SEXP out_var_sel = PROTECT(Rf_allocMatrix(INTSXP, p, num_stored));
     SEXP out_alpha = PROTECT(Rf_allocVector(REALSXP, num_stored));
     SEXP out_aug_counts = PROTECT(Rf_allocMatrix(REALSXP, p, num_stored));
-    SEXP out_momentum = PROTECT(Rf_allocMatrix(REALSXP, p, num_stored));
+    
+    // Allocate a custom size specifically for momentum
+    int num_momentum_stored = std::max(0, (total_iter - dirichlet_warmup) / thinning);
+    SEXP out_momentum = PROTECT(Rf_allocMatrix(REALSXP, p, num_momentum_stored));
     
     SEXP out_power;
     SEXP out_mu;
@@ -1607,6 +1606,7 @@ extern "C" {
     }
     
     int store_idx = 0;
+    int mom_store_idx = 0; // New tracker for momentum
     
     for (int iter = 0; iter < total_iter; ++iter) {
       std::vector<double> current_m_counts(p, 0.0);
@@ -2434,11 +2434,16 @@ extern "C" {
           REAL(out_aug_counts)[i + store_idx * p] =
             current_m_counts[i];
           
-          REAL(out_momentum)[i + store_idx * p] =
-            adaptive_momentum[i];
         }
         
         store_idx++;
+      }
+      if (iter >= dirichlet_warmup &&
+          (iter + 1 - dirichlet_warmup) % thinning == 0) {
+        for (int i = 0; i < p; ++i) {
+          REAL(out_momentum)[i + mom_store_idx * p] = adaptive_momentum[i];
+        }
+        mom_store_idx++;
       }
     }
     
